@@ -149,11 +149,30 @@ define([
                 id: 'RoadSegs',
                 opacity: 1.0,
                 visible: true,
+                minScale: 20000,
                 outFields: ['*'],
                 mode: 1
             },
             editorLayerInfos: {
-                disableGeometryUpdate: true
+                disableGeometryUpdate: true,
+                fieldInfos: [
+                {fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID' },
+                {fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
+                {fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'},
+                {fieldName: 'RHIGHADDR', isEditable: true, label: 'Right High Addr'},
+                {fieldName: 'RLOWADDR', isEditable: true, label: 'Right Low Addr'},
+                {fieldName: 'SEGCLASS', isEditable: true, label: 'SegClass'},
+                {fieldName: 'SPEED', isEditable: true, label: 'Speed Limit'},
+                {fieldName: 'FIREDRIV', isEditable: true, label: 'Fire Drivability'},
+                {fieldName: 'ONEWAY', isEditable: true, label: 'Oneway'},
+                {fieldName: 'OBMH', isEditable: true, label: 'OBMH'},
+                {fieldName: 'L_BLOCK', isEditable: false, label: 'L Block'},
+                {fieldName: 'R_BLOCK', isEditable: false, label: 'R Block'},
+                {fieldName: 'L_TRACT', isEditable: false, label: 'L Tract'},
+                {fieldName: 'R_TRACT', isEditable: false, label: 'R Tract'},
+                {fieldName: 'L_BEAT', isEditable: false, label: 'L Beat'},
+                {fieldName: 'R_BEAT', isEditable: false, label: 'R Beat'}
+                ]
             },
             legendLayerInfos: {
                 exclude: false,
@@ -169,6 +188,7 @@ define([
                 id: 'Intersections',
                 opacity: 1.0,
                 visible: true,
+                minScale: 20000,
                 outFields: ['*'],
                 mode: 1
             }
@@ -281,14 +301,14 @@ define([
         ],
         // set include:true to load. For titlePane type set position the the desired order in the sidebar
         widgets: {
-            growler: {
+/*            growler: {
                 include: true,
                 id: 'growler',
                 type: 'domNode',
                 path: 'gis/dijit/Growler',
                 srcNodeRef: 'growlerDijit',
                 options: {}
-            },
+            },*/
             search: {
                 include: true,
                 type: 'domNode',
@@ -321,7 +341,7 @@ define([
                 options: 'config/identify'
             },
             mapInfo: {
-                include: false,
+                include: true,
                 id: 'mapInfo',
                 type: 'domNode',
                 path: 'gis/dijit/MapInfo',
@@ -454,18 +474,18 @@ define([
                 include: true,
                 id: 'find',
                 type: 'titlePane',
-                canFloat: true,
+                canFloat: false,
                 path: 'gis/dijit/Find',
                 title: i18n.viewer.widgets.find,
                 open: false,
                 position: 3,
                 options: 'config/find'
             },
-            draw: {
+/*            draw: {
                 include: false,
                 id: 'draw',
                 type: 'titlePane',
-                canFloat: true,
+                canFloat: false,
                 path: 'gis/dijit/Draw',
                 title: i18n.viewer.widgets.draw,
                 open: false,
@@ -474,12 +494,12 @@ define([
                     map: true,
                     mapClickMode: true
                 }
-            },
+            },*/
 /*            measure: {
                 include: true,
                 id: 'measurement',
                 type: 'titlePane',
-                canFloat: true,
+                canFloat: false,
                 path: 'gis/dijit/Measurement',
                 title: i18n.viewer.widgets.measure,
                 open: false,
@@ -495,7 +515,7 @@ define([
                 include: false,
                 id: 'print',
                 type: 'titlePane',
-                canFloat: true,
+                canFloat: false,
                 path: 'gis/dijit/Print',
                 title: i18n.viewer.widgets.print,
                 open: false,
@@ -549,8 +569,8 @@ define([
                         enableUndoRedo: true,
                         createOptions: {
                             //polygonDrawTools: ['freehandpolygon', 'autocomplete']
-                            polygonDrawTools: [],
-                            polylineDrawTools: []
+                            //polygonDrawTools: [],
+                            //polylineDrawTools: []
                         },
                         toolbarOptions: {
                             reshapeVisible: false,
@@ -560,11 +580,11 @@ define([
                     }
                 }
             },
-            streetview: {
+/*            streetview: {
                 include: true,
                 id: 'streetview',
                 type: 'titlePane',
-                canFloat: true,
+                canFloat: false,
                 position: 9,
                 path: 'gis/dijit/StreetView',
                 title: i18n.viewer.widgets.streetview,
@@ -582,8 +602,8 @@ define([
                     mapClickMode: true,
                     mapRightClickMenu: true
                 }
-            },
-            locale: {
+            },*/
+/*            locale: {
                 include: true,
                 id: 'locale',
                 //type: 'titlePane',
@@ -596,7 +616,7 @@ define([
                 options: {
                     style: 'margin-left: 30px;'
                 }
-            },
+            },*/
             help: {
                 include: true,
                 id: 'help',

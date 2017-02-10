@@ -15,7 +15,7 @@ define([
         mapClickMode: true,
         mapRightClickMenu: true,
         identifyLayerInfos: true,
-        identifyTolerance: 10,
+        identifyTolerance: 100,
         draggable: false,
 
         // config object definition:
@@ -34,9 +34,9 @@ define([
         // for details on pop-up definition see: https://developers.arcgis.com/javascript/jshelp/intro_popuptemplate.html
 
         identifies: {
-            louisvillePubSafety: {
+            RoadSegs: {
                 2: {
-                    title: i18n.identify.louisvillePubSafety.policeStation,
+                    title: i18n.identify.RoadSegs.road,
                     fieldInfos: [{
                       // example of adding a 'calculated' or formatted field
                       // click on a louisville kentucky police station to see
@@ -61,7 +61,7 @@ define([
                         visible: true
                     }]
                 },
-                8: {
+/*                8: {
                     title: i18n.identify.louisvillePubSafety.trafficCamera,
                     description: '{Description} lasted updated: {Last Update Date}',
                     mediaInfos: [{
@@ -73,7 +73,7 @@ define([
                             linkURL: '{Location URL}'
                         }
                     }]
-                }
+                }*/
             }
         }
     };

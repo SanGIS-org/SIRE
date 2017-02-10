@@ -10,7 +10,6 @@ define([
 
         startup: function () {
             this.inherited(arguments);
-
             // in _ConfigMixin
             this.initConfigAsync().then(
                 lang.hitch(this, 'initConfigSuccess'),

@@ -14,21 +14,24 @@ define({
             sf311Incidents: 'Find Incident By Code/Description'
         },
         identify: {
-            louisvillePubSafety: {
+/*            louisvillePubSafety: {
                 policeStation: 'Police Station',
                 trafficCamera: 'Traffic Camera'
+            }*/
+            RoadSegs: {
+                road: 'Road'
             }
         },
         viewer: {
             operationalLayers: {
-                damageAssessment: 'Damage Assessment',
-                louisvillePubSafety: 'Louisville Public Safety',
+/*                damageAssessment: 'Damage Assessment',
+                louisvillePubSafety: 'Louisville Public Safety',*/
                 RoadSegs: 'RoadSegs',
                 Intersections: 'Intersections'
             },
             titles: {
-                header: 'SIRE',
-                pageTitle: 'SIRE Map Editor',
+                header: 'SIRE Road Editor',
+                pageTitle: 'SIRE Road Editor',
                 subHeader: 'for Emergency Services'
             },
             widgets: {
@@ -42,14 +45,14 @@ define({
                 measure: 'Measurement',
                 layerControl: 'Layers',
                 legend: 'Legend',
-                locale: 'Locale',
+                // locale: 'Locale',
                 print: 'Print',
                 streetview: 'Google Street View'
             }
         }
     },
-    'es': true,
-    'fr': true,
-    'pt-br': true,
-    'pt-pt': true
+    'es': false,
+    'fr': false,
+    'pt-br': false,
+    'pt-pt': false
 });
