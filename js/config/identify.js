@@ -15,7 +15,7 @@ define([
         mapClickMode: true,
         mapRightClickMenu: true,
         identifyLayerInfos: true,
-        identifyTolerance: 5,
+        identifyTolerance: 10,
         draggable: false,
 
         // config object definition:

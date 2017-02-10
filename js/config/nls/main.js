@@ -7,8 +7,7 @@ define({
             landsatShaded: 'Landsat Shaded'
         },
         bookmarks: {
-            nullIsland: 'Null Island',
-            usa: 'USA'
+            sd: 'San Diego'
         },
         find: {
             louisvillePubSafety: 'Find A Public Safety Location By Name',
@@ -28,9 +27,9 @@ define({
                 Intersections: 'Intersections'
             },
             titles: {
-                header: 'Configurable Map Viewer',
-                pageTitle: 'Configurable Map Viewer',
-                subHeader: 'make it your own'
+                header: 'SIRE',
+                pageTitle: 'SIRE Map Editor',
+                subHeader: 'for Emergency Services'
             },
             widgets: {
                 bookmarks: 'Bookmarks',

@@ -5,10 +5,9 @@ define([
     /*'esri/urlUtils',*/
     'esri/tasks/GeometryService',
     'esri/layers/ImageParameters',
-    'gis/plugins/Google',
     'dojo/i18n!./nls/main',
     'dojo/topic'
-], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, GoogleMapsLoader, i18n, topic) {
+], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, i18n, topic) {
 
     // url to your proxy page, must be on same machine hosting you app. See proxy folder for readme.
     esriConfig.defaults.io.proxyUrl = 'proxy/proxy.ashx';
@@ -26,7 +25,7 @@ define([
 
     // Use your own Google Maps API Key.
     // https://developers.google.com/maps/documentation/javascript/get-api-key
-    GoogleMapsLoader.KEY = 'NOT-A-REAL-API-KEY';
+    //GoogleMapsLoader.KEY = 'NOT-A-REAL-API-KEY';
 
     // helper function returning ImageParameters for dynamic layers
     // example:
@@ -70,42 +69,51 @@ define([
 
         //default mapClick mode, mapClickMode lets widgets know what mode the map is in to avoid multipult map click actions from taking place (ie identify while drawing).
         defaultMapClickMode: 'identify',
+
+/*        baseMap: {
+            baseMapLayers: [{
+                title: sangisBaseMap,
+                opacity: 1,
+                visibility: true,
+                url: 'https://gis.sangis.org/maps/rest/services/Public/Basemap/MapServer'
+            }]
+        },*/
         // map options, passed to map constructor. see: https://developers.arcgis.com/javascript/jsapi/map-amd.html#map1
         mapOptions: {
             basemap: 'streets',
-            center: [-96.59179687497497, 39.09596293629694],
-            zoom: 5,
+            center: [-116.8611, 33],
+            zoom: 10,
+            minZoom: 9,
             sliderStyle: 'small'
         },
-
         //webMapId: 'ef9c7fbda731474d98647bebb4b33c20',  // High Cost Mortgage
         // webMapOptions: {},
 
         // panes: {
-        // 	left: {
-        // 		splitter: true
-        // 	},
-        // 	right: {
-        // 		id: 'sidebarRight',
-        // 		placeAt: 'outer',
-        // 		region: 'right',
-        // 		splitter: true,
-        // 		collapsible: true
-        // 	},
-        // 	bottom: {
-        // 		id: 'sidebarBottom',
-        // 		placeAt: 'outer',
-        // 		splitter: true,
-        // 		collapsible: true,
-        // 		region: 'bottom'
-        // 	},
-        // 	top: {
-        // 		id: 'sidebarTop',
-        // 		placeAt: 'outer',
-        // 		collapsible: true,
-        // 		splitter: true,
-        // 		region: 'top'
-        // 	}
+        //  left: {
+        //      splitter: true
+        //  },
+        //  right: {
+        //      id: 'sidebarRight',
+        //      placeAt: 'outer',
+        //      region: 'right',
+        //      splitter: true,
+        //      collapsible: true
+        //  },
+        //  bottom: {
+        //      id: 'sidebarBottom',
+        //      placeAt: 'outer',
+        //      splitter: true,
+        //      collapsible: true,
+        //      region: 'bottom'
+        //  },
+        //  top: {
+        //      id: 'sidebarTop',
+        //      placeAt: 'outer',
+        //      collapsible: true,
+        //      splitter: true,
+        //      region: 'top'
+        //  }
         // },
         // collapseButtonsPane: 'center', //center or outer
 
@@ -164,7 +172,7 @@ define([
                 outFields: ['*'],
                 mode: 1
             }
-        }, {
+        }/*, {
             type: 'dynamic',
             url: 'https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/PublicSafety/PublicSafetyOperationalLayers/MapServer',
             title: i18n.viewer.operationalLayers.louisvillePubSafety,
@@ -212,7 +220,7 @@ define([
                     label: 'Say Hello',
                     iconClass: 'fa fa-smile-o'
                 }]
-            }
+            }*/
         /*
         //examples of vector tile layers (beta in v3.15)
         }, {
@@ -269,8 +277,8 @@ define([
                     }
                 }]
             }
-        */
-        }],
+        }*/
+        ],
         // set include:true to load. For titlePane type set position the the desired order in the sidebar
         widgets: {
             growler: {
@@ -295,7 +303,7 @@ define([
                 }
             },
             basemaps: {
-                include: false,
+                include: true,
                 id: 'basemaps',
                 type: 'domNode',
                 path: 'gis/dijit/Basemaps',
@@ -467,7 +475,7 @@ define([
                     mapClickMode: true
                 }
             },
-            measure: {
+/*            measure: {
                 include: true,
                 id: 'measurement',
                 type: 'titlePane',
@@ -482,7 +490,7 @@ define([
                     defaultAreaUnit: units.SQUARE_MILES,
                     defaultLengthUnit: units.MILES
                 }
-            },
+            },*/
             print: {
                 include: false,
                 id: 'print',
