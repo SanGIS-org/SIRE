@@ -8,33 +8,30 @@ define([
         zoomExtentFactor: 2,
         queries: [
             {
-                description: i18n.find.louisvillePubSafety,
-                url: 'https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/PublicSafety/PublicSafetyOperationalLayers/MapServer',
-                layerIds: [1, 2, 3, 4, 5, 6, 7],
-                searchFields: ['FDNAME, PDNAME', 'NAME', 'RESNAME'],
+                // description: i18n.find.louisvillePubSafety,
+                description: i18n.find.roadSegs,
+                url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/3',
+                // layerIds: [1, 2, 3, 4, 5, 6, 7],
+                layerIds: [ 1 ],
+                // searchFields: ['FDNAME, PDNAME', 'NAME', 'RESNAME'],
+                searchFields: [ 'ROADSEGID' ],
                 minChars: 2,
                 gridColumns: [
-                    {
-                        field: 'Name',
-                        label: 'Name'
-                    },
-                    {
-                        field: 'layerName',
-                        label: 'Layer',
-                        width: 100,
-                        sortable: false,
-                        resizable: false
-                    }
+                    {field: 'ROADSEGID', label: 'RoadSegID', width: 100, sortable: false, resizable: false},
+                    {field: 'FNODE', label: 'FNode', width: 100, sortable: false, resizable: false, get: function ( reuslt ) {
+                        var fnode = result.feature.attributes.FNODE;
+                        return fnode;
+                    }}
                 ],
                 sort: [
                     {
-                        attribute: 'Name',
+                        attribute: 'ROADSEGID',
                         descending: false
                     }
                 ],
-                prompt: 'fdname, pdname, name or resname',
-                selectionMode: 'single'
-            },
+                prompt: 'Road Segment ID',
+                // selectionMode: 'single'
+            }/*,
             {
                 description: i18n.find.sf311Incidents,
                 url: 'https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/PublicSafety/PublicSafetyOperationalLayers/MapServer',
@@ -82,7 +79,7 @@ define([
                         }
                     }
                 ]
-            }
+            }*/
         ],
         selectionSymbols: {
             polygon: {

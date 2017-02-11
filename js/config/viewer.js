@@ -6,8 +6,10 @@ define([
     'esri/tasks/GeometryService',
     'esri/layers/ImageParameters',
     'dojo/i18n!./nls/main',
-    'dojo/topic'
-], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, i18n, topic) {
+    'dojo/topic',
+    'esri/dijit/Basemap',
+    'esri/dijit/BasemapLayer'
+], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, i18n, topic, Basemap, BasemapLayer) {
 
     // url to your proxy page, must be on same machine hosting you app. See proxy folder for readme.
     esriConfig.defaults.io.proxyUrl = 'proxy/proxy.ashx';
@@ -50,7 +52,7 @@ define([
     //these topics publish a simple message to the growler
     //in a real world example, these topics would be used
     //in their own widget to listen for layer menu click events
-    topic.subscribe('layerControl/hello', function (event) {
+/*    topic.subscribe('layerControl/hello', function (event) {
         topic.publish('growler/growl', {
             title: 'Hello!',
             message: event.layer._titleForLegend + ' ' + event.subLayer.name + ' says hello'
@@ -61,26 +63,23 @@ define([
             title: 'Goodbye!',
             message: event.layer._titleForLegend + ' ' + event.subLayer.name + ' says goodbye'
         });
-    });
+    });*/
 
     return {
         // used for debugging your app
         isDebug: true,
 
         //default mapClick mode, mapClickMode lets widgets know what mode the map is in to avoid multipult map click actions from taking place (ie identify while drawing).
-        defaultMapClickMode: 'identify',
+        defaultMapClickMode: 'editor',
 
-/*        baseMap: {
-            baseMapLayers: [{
-                title: sangisBaseMap,
-                opacity: 1,
-                visibility: true,
-                url: 'https://gis.sangis.org/maps/rest/services/Public/Basemap/MapServer'
-            }]
-        },*/
         // map options, passed to map constructor. see: https://developers.arcgis.com/javascript/jsapi/map-amd.html#map1
         mapOptions: {
-            basemap: 'streets',
+            basemap: new Basemap({
+                id: 'sangisBaseMap',
+                layers: [new BasemapLayer({
+                url: 'https://gis.sangis.org/maps/rest/services/Public/Basemap/MapServer'
+                })]
+            }),
             center: [-116.8611, 33],
             zoom: 10,
             minZoom: 9,
@@ -145,6 +144,7 @@ define([
             type: 'feature',
             url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/3',
             title: "RoadSegs",
+            layerIDs: [ 1 ],
             options: {
                 id: 'RoadSegs',
                 opacity: 1.0,
@@ -179,6 +179,17 @@ define([
                 layerInfo: {
                     title: i18n.viewer.operationalLayers.RoadSegs
                 }
+            }
+        }, {
+            type: 'dynamic',
+            url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7',
+            title: "RoadSeg_Alias",
+            options: {
+                id: 'RoadSeg_Alias',
+                opacity: 1.0,
+                visible: true,
+                outFields: ['*'],
+                mode: 1
             }
         }, {
             type: 'feature',
@@ -322,14 +333,14 @@ define([
                     expanded: false
                 }
             },
-            basemaps: {
+/*            basemaps: {
                 include: true,
                 id: 'basemaps',
                 type: 'domNode',
                 path: 'gis/dijit/Basemaps',
                 srcNodeRef: 'basemapsDijit',
                 options: 'config/basemaps'
-            },
+            },*/
             identify: {
                 include: true,
                 id: 'identify',

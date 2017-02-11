@@ -10,8 +10,9 @@ define({
             sd: 'San Diego'
         },
         find: {
-            louisvillePubSafety: 'Find A Public Safety Location By Name',
-            sf311Incidents: 'Find Incident By Code/Description'
+            roadSegs: 'Find using RoadSegID'
+            // louisvillePubSafety: 'Find A Public Safety Location By Name',
+            // sf311Incidents: 'Find Incident By Code/Description'
         },
         identify: {
 /*            louisvillePubSafety: {
