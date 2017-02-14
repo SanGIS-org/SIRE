@@ -24,8 +24,9 @@ define([
 
     'dijit/form/Form',
     'dijit/form/FilteringSelect',
-    'xstyle/css!./Identify/css/Identify.css'
-], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, MenuItem, lang, array, all, topic, query, domStyle, domClass, Moveable, Memory, IdentifyTask, IdentifyParameters, PopupTemplate, FeatureLayer, TimeExtent, IdentifyTemplate, i18n, Formatters) {
+    'xstyle/css!./Identify/css/Identify.css',
+    "esri/tasks/RelationshipQuery",
+], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, MenuItem, lang, array, all, topic, query, domStyle, domClass, Moveable, Memory, IdentifyTask, IdentifyParameters, PopupTemplate, FeatureLayer, TimeExtent, IdentifyTemplate, i18n, Formatters, RelationshipQuery) {
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         widgetsInTemplate: true,
@@ -226,6 +227,9 @@ define([
                     identifies.push(layer.identifyTask.execute(params));
                     identifiedlayers.push(layer);
                 }
+                // var relatedQuery = new RelationshipQuery();
+                // relatedQuery.outFields = ["FULL_NAME"];
+                // relatedQuery.relationshipId = 2;
             }));
 
             if (identifies.length > 0) {
@@ -412,6 +416,7 @@ define([
 
             // from the results
             if (result && result.feature) {
+
                 var attributes = result.feature.attributes;
                 if (attributes) {
                     for (var prop in attributes) {
@@ -443,12 +448,14 @@ define([
                 }));
 
                 // from the fields layer
+                // This is the POPUP being generated for SIRE
             } else if (layer.fields) {
-
+                console.log(layer.relationships);
                 array.forEach(layer.fields, lang.hitch(this, function (field) {
                     this.addDefaultFieldInfo(fieldInfos, {
                         fieldName: field.name,
-                        label: field.alias === field.name ? this.makeSentenceCase(field.name) : field.alias,
+                        // label: field.alias === field.name ? this.makeSentenceCase(field.name) : field.alias,
+                        label: field.name,
                         visible: true
                     });
                 }));

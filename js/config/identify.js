@@ -12,7 +12,7 @@ define([
     }
     return {
         map: true,
-        mapClickMode: true,
+        mapClickMode: false,
         mapRightClickMenu: true,
         identifyLayerInfos: true,
         identifyTolerance: 100,
