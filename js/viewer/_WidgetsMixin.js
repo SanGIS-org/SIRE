@@ -185,6 +185,9 @@ define([
             if (options.identifyLayerInfos) {
                 options.layerInfos = this.identifyLayerInfos;
             }
+            if (options.attributeInspectorLayerInfos) {
+                options.layerInfos = this.attributeInspectorLayerInfos;
+            }
             return options;
         },
 

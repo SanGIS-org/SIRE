@@ -8,7 +8,7 @@ define([
             {
                 description: i18n.find.roadSegs,
                 url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/MapServer',
-                layerIds: [ 1 ],
+                layerIds: [ 3 ],
                 searchFields: [ 'ROADSEGID' ],
                 minChars: 2,
                 gridColumns: [

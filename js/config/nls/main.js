@@ -37,18 +37,18 @@ define({
             },
             widgets: {
                 bookmarks: 'Bookmarks',
-                directions: 'Directions',
-                draw: 'Draw',
+                // directions: 'Directions',
+                // draw: 'Draw',
                 editor: 'Editor',
                 find: 'Find',
                 help: 'Help',
                 identify: 'Identify',
-                measure: 'Measurement',
+                // measure: 'Measurement',
                 layerControl: 'Layers',
                 legend: 'Legend',
                 // locale: 'Locale',
-                print: 'Print',
-                streetview: 'Google Street View'
+                // print: 'Print',
+                // streetview: 'Google Street View'
             }
         }
     },

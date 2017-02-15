@@ -25,7 +25,7 @@ define([
     'dijit/form/Form',
     'dijit/form/FilteringSelect',
     'xstyle/css!./Identify/css/Identify.css',
-    "esri/tasks/RelationshipQuery",
+    "esri/tasks/RelationshipQuery"
 ], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, MenuItem, lang, array, all, topic, query, domStyle, domClass, Moveable, Memory, IdentifyTask, IdentifyParameters, PopupTemplate, FeatureLayer, TimeExtent, IdentifyTemplate, i18n, Formatters, RelationshipQuery) {
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
@@ -39,7 +39,7 @@ define([
         infoTemplates: {},
         featureLayers: {},
         ignoreOtherGraphics: true,
-        createDefaultInfoTemplates: true,
+        createDefaultInfoTemplates: false,
         draggable: false,
         layerSeparator: '||',
         allLayersId: '***',
@@ -95,6 +95,7 @@ define([
             if (this.draggable) {
                 this.setupDraggable();
             }
+
         },
         /**
          * handles an array of layerInfos to call addLayerInfo for each layerInfo
@@ -197,6 +198,7 @@ define([
             }
         },
         executeIdentifyTask: function (evt) {
+        // This function is called when a user right-clicks > Identify here
             if (!this.checkForGraphicInfoTemplate(evt)) {
                 return;
             }
@@ -320,6 +322,7 @@ define([
 
         getLayerInfos: function (ref, selectedIds) {
             var layerIds = [];
+
             array.forEach(ref.layerInfos, lang.hitch(this, function (layerInfo) {
                 if (!this.includeSubLayer(layerInfo, ref, selectedIds)) {
                     return;
@@ -416,7 +419,6 @@ define([
 
             // from the results
             if (result && result.feature) {
-
                 var attributes = result.feature.attributes;
                 if (attributes) {
                     for (var prop in attributes) {
@@ -432,7 +434,6 @@ define([
 
                 // from the outFields of the layer
             } else if (layer._outFields && (layer._outFields.length) && (layer._outFields[0] !== '*')) {
-
                 var fields = layer.fields;
                 array.forEach(layer._outFields, lang.hitch(this, function (fieldName) {
                     var foundField = array.filter(fields, function (field) {
@@ -450,7 +451,6 @@ define([
                 // from the fields layer
                 // This is the POPUP being generated for SIRE
             } else if (layer.fields) {
-                console.log(layer.relationships);
                 array.forEach(layer.fields, lang.hitch(this, function (field) {
                     this.addDefaultFieldInfo(fieldInfos, {
                         fieldName: field.name,

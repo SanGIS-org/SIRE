@@ -18,7 +18,7 @@ define([
         i18n: i18n,
         widgetsInTemplate: true,
         attributeInspector: null,
-        isEdit: false,
+        isAttributeInspector: false,
         mapClickMode: null,
         postCreate: function () {
             this.inherited(arguments);
@@ -29,8 +29,8 @@ define([
                 })));
             }
         },
-        toggleEditing: function () {
-            if (!this.isEdit) {
+        toggleAttributeInspector: function () {
+            if (!this.isAttributeInspector) {
                 var ops = lang.clone(this.settings);
                 ops.map = this.map;
                 ops.layerInfos = this.layerInfos;
@@ -51,34 +51,34 @@ define([
 
                 this.toggleBTN.set('label', this.i18n.labels.stopEditing);
                 this.toggleBTN.set('class', 'danger');
-                this.isEdit = true;
+                this.isAttributeInspector = true;
                 topic.publish('mapClickMode/setCurrent', 'attributeInspector');
             } else {
-                this.endEditing();
+                this.endAttributeInspector();
                 topic.publish('mapClickMode/setDefault');
             }
         },
-        endEditing: function () {
+        endAttributeInspector: function () {
             if (this.attributeInspector && this.attributeInspector.destroyRecursive) {
                 this.attributeInspector.destroyRecursive();
             }
             this.toggleBTN.set('label', this.i18n.labels.startEditing);
             this.toggleBTN.set('class', 'success');
-            this.isEdit = false;
+            this.isAttributeInspector = false;
             this.attributeInspector = null;
         },
 
         onLayoutChange: function (open) {
             // end edit on close of title pane
             if (!open && this.mapClickMode === 'attributeInspector') {
-                this.endEditing();
+                this.endAttributeInspector();
                 topic.publish('mapClickMode/setDefault');
             }
         },
         setMapClickMode: function (mode) {
             this.mapClickMode = mode;
             if (mode !== 'attributeInspector') {
-                this.endEditing();
+                this.endAttributeInspector();
             }
         }
     });

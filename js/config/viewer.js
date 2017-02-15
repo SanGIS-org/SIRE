@@ -36,7 +36,7 @@ define([
         // used for debugging your app
         isDebug: true,
         //default mapClick mode, mapClickMode lets widgets know what mode the map is in to avoid multiple map click actions from taking place (ie identify while drawing).
-        defaultMapClickMode: 'editor',
+        defaultMapClickMode: 'identify',
         // map options, passed to map constructor. see: https://developers.arcgis.com/javascript/jsapi/map-amd.html#map1
         mapOptions: {
             basemap: new Basemap({
@@ -67,7 +67,8 @@ define([
             type: 'feature',
             url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/3',
             title: "RoadSegs",
-            layerIDs: [ 1 ],
+            // titleHasRelatedFields: true,
+            layerIDs: [ 3 ],
             options: {
                 id: 'RoadSegs',
                 opacity: 1.0,
@@ -79,39 +80,81 @@ define([
             editorLayerInfos: {
                 disableGeometryUpdate: true,
                 fieldInfos: [
-                {fieldName: 'relationships/2/FULL_NAME', isEditable: false, label: 'Road Name'},
-                {fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
-                {fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
-                {fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'},
-                {fieldName: 'RHIGHADDR', isEditable: true, label: 'Right High Addr'},
-                {fieldName: 'RLOWADDR', isEditable: true, label: 'Right Low Addr'},
-                {fieldName: 'SEGCLASS', isEditable: true, label: 'SegClass'},
-                {fieldName: 'SPEED', isEditable: true, label: 'Speed Limit'},
-                {fieldName: 'FIREDRIV', isEditable: true, label: 'Fire Drivability'},
-                {fieldName: 'ONEWAY', isEditable: true, label: 'Oneway'},
-                {fieldName: 'OBMH', isEditable: true, label: 'OBMH'},
-                {fieldName: 'L_BLOCK', isEditable: false, label: 'L Block'},
-                {fieldName: 'R_BLOCK', isEditable: false, label: 'R Block'},
-                {fieldName: 'L_TRACT', isEditable: false, label: 'L Tract'},
-                {fieldName: 'R_TRACT', isEditable: false, label: 'R Tract'},
-                {fieldName: 'L_BEAT', isEditable: false, label: 'L Beat'},
-                {fieldName: 'R_BEAT', isEditable: false, label: 'R Beat'}
+                    {fieldName: 'relationships/2/FULL_NAME', isEditable: false, label: 'Road Name'},
+                    //{fieldName: 'FULL_NAME', isEditable: false, label: 'Road Name'},
+                    {fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
+                    {fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
+                    {fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'},
+                    {fieldName: 'RHIGHADDR', isEditable: true, label: 'Right High Addr'},
+                    {fieldName: 'RLOWADDR', isEditable: true, label: 'Right Low Addr'},
+                    {fieldName: 'SEGCLASS', isEditable: true, label: 'SegClass'},
+                    {fieldName: 'SPEED', isEditable: true, label: 'Speed Limit'},
+                    {fieldName: 'FIREDRIV', isEditable: true, label: 'Fire Drivability'},
+                    {fieldName: 'ONEWAY', isEditable: true, label: 'Oneway'},
+                    {fieldName: 'OBMH', isEditable: true, label: 'OBMH'},
+                    {fieldName: 'L_BLOCK', isEditable: false, label: 'L Block'},
+                    {fieldName: 'R_BLOCK', isEditable: false, label: 'R Block'},
+                    {fieldName: 'L_TRACT', isEditable: false, label: 'L Tract'},
+                    {fieldName: 'R_TRACT', isEditable: false, label: 'R Tract'},
+                    {fieldName: 'L_BEAT', isEditable: false, label: 'L Beat'},
+                    {fieldName: 'R_BEAT', isEditable: false, label: 'R Beat'}
                 ]
             },
             isEditable: true,
             fieldInfos: [
+                {fieldName: 'relationships/2/FULL_NAME', isEditable: false, label: 'Road Name'},
                 {fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
                 {fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
                 {fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'}
             ],
+            identifyLayerInfos: {
+                layerIds: [3],
+            },
             legendLayerInfos: {
                 exclude: false,
                 layerInfo: {
                     title: i18n.viewer.operationalLayers.RoadSegs
                 }
             }
-        },
-        {
+        }, /*{
+            type: 'feature',
+            url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/4',
+            title: "RoadName",
+            titleHasRelatedFields: true,
+            layerIDs: [ 4 ],
+            options: {
+                id: 'RoadName',
+                opacity: 1.0,
+                visible: true,
+                minScale: 20000,
+                outFields: ['*'],
+                mode: 1
+            },
+            editorLayerInfos: {
+                disableGeometryUpdate: true,
+                fieldInfos: [
+                {fieldName: 'FULL_NAME', isEditable: false, label: 'Road Name'},
+                {fieldName: 'ROAD_ID', isEditable: false, label: 'RoadID'}
+                ]
+            },
+            identifyLayerInfos: {
+                layerIds: [4]
+            },
+            isEditable: true,
+            attributeInspectorLayerInfos: {
+                fieldInfos: [
+                    {fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
+                    {fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
+                    {fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'}
+                ]
+            },
+            legendLayerInfos: {
+                exclude: true,
+                layerInfo: {
+                    title: 'Test Title'
+                }
+            }
+        },*/ {
             type: 'feature',
             url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/2',
             title: "Intersections",
@@ -126,9 +169,8 @@ define([
             },
             legendLayerInfos: {
                 exclude: true
-            },
-        }
-        ],
+            }
+        }],
         // set include:true to load. For titlePane type set position the the desired order in the sidebar
         widgets: {
             search: {
@@ -143,6 +185,16 @@ define([
                     enableButtonMode: true,
                     expanded: false
                 }
+            },
+            identify: {
+                include: true,
+                id: 'identify',
+                type: 'titlePane',
+                path: 'gis/dijit/Identify',
+                title: i18n.viewer.widgets.identify,
+                open: false,
+                position: 3,
+                options: 'config/identify'
             },
             mapInfo: {
                 include: true,
@@ -173,7 +225,6 @@ define([
                     scalebarUnit: 'dual'
                 }
             },
-
             homeButton: {
                 include: true,
                 id: 'homeButton',
@@ -214,13 +265,13 @@ define([
 
                     //create a example sub layer menu that will
                     //apply to all layers of type 'dynamic'
-/*                    subLayerMenu: {
+                    subLayerMenu: {
                         dynamic: [{
                             topic: 'goodbye',
                             iconClass: 'fa fa-frown-o',
                             label: 'Say goodbye'
                         }]
-                    }*/
+                    }
                 }
             },
             bookmarks: {
@@ -290,7 +341,7 @@ define([
                     }
                 }
             },
-            ATTR_EDIT: {
+/*            attributeInspector: {
                 include: true,
                 id: 'attributeInspector',
                 type: 'titlePane',
@@ -314,7 +365,7 @@ define([
                         }
                     }
                 }
-            },
+            },*/
             help: {
                 include: true,
                 id: 'help',
@@ -322,6 +373,34 @@ define([
                 path: 'gis/dijit/Help',
                 title: i18n.viewer.widgets.help,
                 options: {}
+            },
+            relatedRecords: {
+                include: true,
+                id: 'relatedRecords',
+                type: 'domNode',
+                srcNodeRef: 'relatedRecords',
+                path: 'gis/dijit/RelationshipTable',
+                title: 'Related Records',
+                objectIdField: 'OBJECTID',
+                options: {
+                    //required option
+                    layerControlLayerInfos: true,
+
+                    //optional relationships property
+                    relationships: {
+                        3: { //layerID (string) key refers to featurelayer id in the operationalLayers array
+                            objectIdField: 'OBJECTID',
+                            2: { //relationshipID (integer) key referrs to the relationship id on the rest services page
+                                //relationship tab title
+                                title: 'Road Names',
+                                //set exclude to true to skip this relationship
+                                exclude: false,
+                                //other dgrid options like columns may be included
+                                
+                            }
+                        }
+                    }
+                }
             }
         }
     };
