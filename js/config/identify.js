@@ -40,6 +40,7 @@ define([
         identifyLayerInfos: true,
         identifyTolerance: 100,
         draggable: false,
+        //relationships: true,
 
         // config object definition:
         //  {<layer id>:{
@@ -55,8 +56,24 @@ define([
         //  }
 
         // for details on pop-up definition see: https://developers.arcgis.com/javascript/jshelp/intro_popuptemplate.html
-        identifies: {
+       /* identifies: {
             RoadSegs: {
+                3: {
+                    title: 'Test Title',
+                    content: formatters.relationship({
+                        title: i18n.identify.RoadSegs.road,
+                        objectIdField: 'OBJECTID',
+                        relationshipId: 2,
+                        url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/3',
+                        columns: [{
+                                label: 'ObjectID',
+                                field: 'OBJECTID'
+                            }, {
+                                label: 'Full Name',
+                                field: 'FULL_NAME'
+                            }],
+                    })
+                },
                 3: {
                     title: i18n.identify.RoadSegs.road,
                     fieldInfos: [
@@ -72,14 +89,29 @@ define([
                     }, {
                         fieldName: 'relationships/2/FULL_NAME',
                         visible: true
-                    }, {
-                        fieldName: 'Police Function',
+                    }]
+                }
+            }
+        }*/
+        identifies: {
+            roads: {
+/*                3: {
+                    title: i18n.identify.RoadSegs.road,
+                    fieldInfos: [
+                    {
+                        fieldName: 'ROADID',
                         visible: true
                     }, {
-                        fieldName: 'Last Update Date',
+                        fieldName: 'ROADSEGID',
+                        visible: true
+                    }, {
+                        fieldName: 'OBJECTID',
+                        visible: true
+                    }, {
+                        fieldName: 'relationships/2/FULL_NAME',
                         visible: true
                     }]
-                },
+                },*/
                 3: {
                     title: 'Testy McTesterson',
                     content: formatters.relationship({

@@ -35,7 +35,6 @@ define([
                     source: 'RelationshipTable',
                     error: 'This widget requires an objectIdField'
                 });
-                console.log(this);
                 this.destroy();
             }
             this.store = new Memory({
