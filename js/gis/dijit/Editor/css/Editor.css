@@ -1,0 +1,20 @@
+.esriAttributeInspector .atiLabel {
+	font-size: .8rem;
+}
+.flat .dijitTextBox {
+	width: 12rem;
+	font-size: .8rem;
+}
+.flat .dijitInputInner, .flat .dijitTextBox {
+	line-height: 14px;
+	margin: 3px 0;
+}
+.esriAttributeInspector {
+	margin-bottom: 3rem;
+}
+#attributeInspectorMsg {
+	color: green;
+	font-size: .9rem;
+	font-weight: bold;
+	font-style: italic;
+}

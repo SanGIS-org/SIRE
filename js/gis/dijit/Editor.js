@@ -3,30 +3,40 @@ define([
 	'dijit/_WidgetBase',
 	'dijit/_TemplatedMixin',
 	'dijit/_WidgetsInTemplateMixin',
+	"dojo/_base/array",
 	'dojo/_base/lang',
 	'dojo/dom-construct',
 	'dojo/topic',
 	'dojo/aspect',
+	"esri/tasks/query", 
+	"esri/layers/FeatureLayer",
 	'esri/tasks/RelationshipQuery',
-	"dojo/promise/all",
-	"dojo/string",
+	'esri/dijit/AttributeInspector',
+	'dojo/promise/all',
+	'dojo/string',
 	'dojo/text!./Editor/templates/Editor.html',
 	'dojo/i18n!./Editor/nls/resource',
-
+	'xstyle/css!./Editor/css/Editor.css',
 	'dijit/form/Button'
 ], function (declare, 
 _WidgetBase, 
 _TemplatedMixin, 
 _WidgetsInTemplateMixin, 
+arrayUtils, 
 lang, 
 domConstruct, 
 topic, 
-aspect, 
+aspect,
+Query, 
+FeatureLayer, 
 RelationshipQuery, 
+AttributeInspector, 
 all,
 string, 
 template, 
 i18n) {
+	var selectedFeatureAliasTable;
+	var propAttInspector;
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -43,25 +53,122 @@ i18n) {
 					this.onLayoutChange(this.parentWidget.open);
 				})));
 			}
-			console.log('this.map' , this.map);
-			this.map.on('click', lang.hitch(this, function (evt){
-				console.log('map.evt', evt);
-			}));
+			// this.map.on('click', lang.hitch(this, function (evt){
+			// }));
 			this.map._layers.roads.on('click', lang.hitch(this, function (evt) {
-				console.log('evt', evt);
-				// if (this.mapClickMode === 'editor') {
-					// if (evt.graphic != undefined) {
-						this.objectId = evt.graphic.attributes['OBJECTID'];
-						var layer1 = this.map.getLayer("roads");
-						this.getRelatedRecords(this.objectId, layer1, evt.graphic.attributes);
-						this.getRelatedAlias(this.objectId, layer1, evt.graphic.attributes);
-					// }
-				// }
-			}));
+				if (this.mapClickMode === 'editor') {
+					var layerSel = this.map.getLayer("roads");
+				// 	this.getRelatedRecords(this.objectId, layerSel, evt.graphic.attributes);
+				// 	this.getRelatedAlias(this.objectId, layerSel, evt.graphic.attributes);
+					relatedTable.clearSelection();
+					// this.map.infoWindow.setTitle("Searching for related items...");
+					// this.map.infoWindow.show(evt.screenPoint, this.map.getInfoWindowAnchor(evt.screenPoint));
+					var graphicAttributes = evt.graphic.attributes;
+					var objectId = evt.graphic.attributes['OBJECTID'];
+					var title = this.getRoadName(objectId, layerSel, graphicAttributes);
+					console.log('title:', title);
 
+					var relatedQuery = new RelationshipQuery();
+					relatedQuery.outFields = ["*"];
+					relatedQuery.relationshipId = 1;
+					relatedQuery.objectIds = [objectId];
+
+					layerSel.queryRelatedFeatures(relatedQuery, lang.hitch(this, function (relatedRecords) {
+						var fset = relatedRecords[objectId];
+						var content = "";
+						if (fset) {
+							document.getElementById('attributeInspectorDiv').style.display = 'block';
+							// this.map.infoWindow.setTitle(title || "No Title");
+							var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
+								return feature.attributes[relatedTable.objectIdField];
+							});
+							var selectQuery = new Query();
+							selectQuery.objectIds = relatedObjectIds;
+							relatedTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
+
+						} else {
+							content += "No Records Exist For this Point <button id='addFirstButton' type='button' onClick='addNewRecord()'>Add New</button>";
+							document.getElementById('relatedDiv').innerHTML = content;
+							// document.getElementById('attributeInspectorDiv').style.display = 'none';
+							// this.map.infoWindow.setTitle("No Related Items");
+						}
+					}));
+				};
+			}));
+			var relatedTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
+				mode: FeatureLayer.MODE_ONDEMAND,
+				id: "relatedTable",
+				outFields: ["ALIAS_PREDIR_IND",
+							"ALIAS_NM",
+							"ALIAS_SUFFIX_NM",
+							"ALIAS_POST_DIR",
+							"ALIAS_LEFT_LO_ADDR",
+							"ALIAS_LEFT_HI_ADDR",
+							"ALIAS_RIGHT_LO_ADDR",
+							"ALIAS_RIGHT_HI_ADDR",
+							"LMIXADDR",
+							"RMIXADDR",
+							"ALIAS_JURIS"]
+			});
+			relatedTable.on("load", lang.hitch(this, function () {
+				var layerInfos = [{
+					'featureLayer': relatedTable,
+						'showAttachments': false,
+						'isEditable': true,
+						'fieldInfos': arrayUtils.map(relatedTable.fields, function (field) {
+						return {
+							'fieldName': field.name,
+							'isEditable': field.editable,
+							'tooltip': field.type,
+							'label': field.alias
+						};
+					})
+				}];
+				var attInspector = new AttributeInspector({
+					layerInfos: layerInfos
+				}, "attributeInspectorDiv");
+				attInspector.on("attribute-change", function (evt) {
+					evt.feature.attributes[evt.fieldName] = evt.fieldValue;
+					evt.feature.getLayer().applyEdits(null, [evt.feature], null);
+					var msg = evt.fieldName + " changed to " + evt.fieldValue;
+					document.getElementById('attributeInspectorMsg').innerHTML = msg;
+				});
+				attInspector.on("delete", function (evt) {
+					evt.feature.getLayer().applyEdits(null, null, [evt.feature]);
+					// map.infoWindow.hide();
+				});
+				// map.infoWindow.setContent(attInspector.domNode);
+				// map.infoWindow.resize(350, 240);
+			}));
 		},
-		getRelatedRecords: function(oid, layer, graphicAttributes) {
-			var content;
+		addNewRecord: function() {
+			var guid = selectedPointFeature.GlobalID
+			if(selectedPointFeature.SystemType === 0){  //property maintenance feature
+				relatedLayer = propMaintLayer;
+				dojo.style(dojo.query(".propSaveButton")[0],"visibility","visible");
+				var newAttributes = {attributes:{PointID:"" + guid + "",Date:new Date().getTime(),MaintType:"Preventative",Crew:"?",CleanOut:"N",Float:"N",Basket:"N",BioTube:"N",Lid:"N",PumpMotor:"N",ControlPanel:"N",CVTank:"N",CVStreet:"N",DschrgHose:"N",Lateral:"N",CleanSeptic:"N",SealSeptic:"N",Starter:"N",Relay:"N",Hmeter:"N",HighLevel:"N",SelfCorrect:"N",Other:"N"}};
+			}else{
+				relatedLayer = collectSysLayer;
+				dojo.style(dojo.query(".collectSysSaveButton")[0],"visibility","visible");
+				var newAttributes = {attributes:{PointID:"" + guid + "",Date:new Date().getTime(),MaintType:"Preventative",Crew:"?",AirRlfValve:"N",AVRVrebuild:"N",AVRVreplace:"N",Valve:"N",SewerClean:"N",SewerReplace:"N",LSchkPump:"N",Pump:"N",Float:"N",PumpRail:"N",Starter:"N",Relay:"N",HourMeter:"N",SSofVFD:"N",HighLevel:"N",SelfCorrected:"N",Other:"N"}};				
+			}		
+			//dojo.style(saveButton[0],"visibility","visible");
+			
+			
+			relatedLayer.applyEdits([newAttributes],null,null,null,
+			function(error){
+			if(error){
+			}
+			}
+			);
+			if(dojo.byId('addFirstButton')){
+				var content = "<b><span id='pointAddress'>" + (selectedPointFeature.Address === null ? "unknown address":selectedPointFeature.Address ) + "</span></b><br/>Click an event below to edit or <button id='addNewButton' type='button' onClick='addNewRecord()'>Add New</button><ul id='relatedRecords'>";
+				dojo.byId('relatedDiv').innerHTML = content;
+			}
+		},
+		getRoadName: function(oid, layer, graphicAttributes) {
+			// var content;
+			var full_name = "";
 			var relatedQuery = new RelationshipQuery();
 			relatedQuery.objectIds = [oid];
 			relatedQuery.outFields = ["*"];
@@ -72,17 +179,21 @@ i18n) {
 			promises.then(handleQueryResults);
 			function handleQueryResults(results)  {
 				var selectedFeature, attr;
-				var content = "<table class='attrTable'>";
+				// var content = "<table class='attrTable'>";
 				selectedFeature = results.promise;
+				// console.log(selectedFeature);
 				attr = selectedFeature[oid].features["0"].attributes;
 				full_name = attr['FULL_NAME'];
 				console.log('ObjectID: ', oid, '\nRoad Name: ', full_name);
-				content += string.substitute("<tr><td class='attrName'>${label}</td><td class='attrValue'> ${value}</td></tr>",{label: 'Road Name', value: full_name});
-				content += "</table>";
-				document.getElementById('editorResult').innerHTML = content;
+				// content += string.substitute("<tr><td class='attrName'>${label}</td><td class='attrValue'> ${value}</td></tr>",{label: 'Road Name', value: full_name});
+				// content += "</table>";
+				// document.getElementById('editorResult').innerHTML = content;
+				return full_name.toString();
 			};
+			console.log('full_name: ',full_name);
+			return full_name;
 		},
-		getRelatedAlias: function(oid, layer, graphicAttributes) {
+		/*getRelatedAlias: function(oid, layer, graphicAttributes) {
 			var content;
 			var relatedQuery = new RelationshipQuery();
 			relatedQuery.objectIds = [oid];
@@ -96,6 +207,7 @@ i18n) {
 				var selectedFeature, attr;
 				var content = "<table class='attrTable'>";
 				selectedFeature = results.promise;
+				console.log('selectedFeature', selectedFeature);
 				field_names = [	'ALIAS_PREDIR_IND',
 								'ALIAS_NM',
 								'ALIAS_SUFFIX_NM',
@@ -120,7 +232,10 @@ i18n) {
 								'Alias Jurisdiction']
 				field_values = [];
 				if (selectedFeature[oid]) {
-					attr = selectedFeature[oid].features["0"].attributes;
+					selectedFeature = selectedFeature[oid].features["0"];
+					selectedFeatureAliasTable = selectedFeature;
+					console.log('selectedFeatureNew', selectedFeature);
+					attr = selectedFeature.attributes;
 					field_names.forEach(function(item, index) {
 						if (attr[field_names[index]]) {
 							content += string.substitute("<tr><td class='attrName'>${label}:</td><td class='attrValue'><input value='${value}'></input></td></tr>",{label: field_labels[index], value: attr[field_names[index]]});
@@ -132,12 +247,11 @@ i18n) {
 					field_names.forEach(function(item, index) {
 						content += string.substitute("<tr><td class='attrName'>${label}:</td><td class='attrValue'><input placeholder='no value'></input></td></tr>",{label: field_labels[index]});
 					});
-
 				}
 				content += "</table>";
 				document.getElementById('editorResult').innerHTML += content;
 			};
-		},
+		},*/
 		toggleEditing: function () {
 			if (!this.isEdit) {
 				var ops = lang.clone(this.settings);
@@ -164,6 +278,7 @@ i18n) {
 			} else {
 				this.endEditing();
 				topic.publish('mapClickMode/setCurrent', 'identify');
+				// document.getElementById('attributeInspectorDiv').style.display = 'none';
 			}
 		},
 		endEditing: function () {
@@ -174,6 +289,7 @@ i18n) {
 			this.toggleBTN.set('class', 'success');
 			this.isEdit = false;
 			this.editor = null;
+			document.getElementById('attributeInspectorDiv').style.display = 'none';
 		},
 
 		onLayoutChange: function (open) {

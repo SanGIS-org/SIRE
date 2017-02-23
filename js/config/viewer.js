@@ -70,6 +70,7 @@ define([
 			url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/3',
 			title: "Roads",
 			layerIDs: [ 3 ],
+			isEditable: true,
 			options: {
 				id: 'roads',
 				opacity: 1.0,
@@ -83,6 +84,7 @@ define([
 			},
 			editorLayerInfos: {
 				disableGeometryUpdate: true,
+				enableUndoRedo: true,
 				fieldInfos: [
 					{fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
 					{fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
@@ -94,15 +96,21 @@ define([
 					{fieldName: 'FIREDRIV', isEditable: true, label: 'Fire Drivability'},
 					{fieldName: 'ONEWAY', isEditable: true, label: 'Oneway'},
 					{fieldName: 'OBMH', isEditable: true, label: 'OBMH'},
+					{fieldName: 'DEDSTAT', isEditable: true, label: 'Dedicated Stat'},
+					{fieldName: 'F_LEVEL', isEditable: true, label: 'From Level'},
+					{fieldName: 'T_LEVEL', isEditable: true, label: 'To Level'},
+					{fieldName: 'FUNCLASS', isEditable: true, label: 'Function Class'},
+					{fieldName: 'LMIXADDR', isEditable: true, label: 'Left Mixed Address'},
+					{fieldName: 'RMIXADDR', isEditable: true, label: 'Right Mixed Address'},
+					{fieldName: 'SEGSTAT', isEditable: true, label: 'Segment Stat'},
 					{fieldName: 'L_BLOCK', isEditable: false, label: 'L Block'},
 					{fieldName: 'R_BLOCK', isEditable: false, label: 'R Block'},
 					{fieldName: 'L_TRACT', isEditable: false, label: 'L Tract'},
 					{fieldName: 'R_TRACT', isEditable: false, label: 'R Tract'},
 					{fieldName: 'L_BEAT', isEditable: false, label: 'L Beat'},
-					{fieldName: 'R_BEAT', isEditable: false, label: 'R Beat'}
+					{fieldName: 'R_BEAT', isEditable: false, label: 'R Beat'},
 				]
 			},
-			isEditable: true,
 		}, {
 			type: 'feature',
 			url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/2',
@@ -119,7 +127,8 @@ define([
 			editorLayerInfos: {
 				disableGeometryUpdate: true,
 				fieldInfos: [
-					{fieldName: 'INTERID', isEditable: false, label: 'RoadSegID'},
+					{fieldName: 'INTERID', isEditable: false, label: 'InterID'},
+					{fieldName: 'DWPNO', isEditable: false, label: 'DWPNO'},
 					{fieldName: 'TYPE', isEditable: true, label: 'Left High Addr'}
 				]
 			},
@@ -230,7 +239,7 @@ define([
 				type: 'titlePane',
 				path: 'gis/dijit/LayerControl',
 				title: 'Layers',
-				open: true,
+				open: false,
 				position: 2,
 				options: {
 					map: true,
@@ -314,8 +323,8 @@ define([
 				path: 'gis/dijit/Help',
 				title: 'Help',
 				options: {}
-			},
-			relatedRecords: {
+			}
+			/*relatedRecords: {
 				include: true,
 				id: 'relatedRecords',
 				type: 'domNode',
@@ -341,7 +350,7 @@ define([
 						}
 					}
 				}
-			}
+			}*/
 		}
 	};
 });
