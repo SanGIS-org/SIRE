@@ -35,8 +35,7 @@ all,
 string, 
 template, 
 i18n) {
-	var selectedFeatureAliasTable;
-	var propAttInspector;
+	var selectedFeature, selectedLayer, relatedDivContent, relatedTable;
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -46,6 +45,10 @@ i18n) {
 		mapClickMode: null,
 
 		postCreate: function () {
+			var callSelf = this;
+			var map = this.map;
+			var roadLayer = this.map.getLayer("roads");
+
 			this.inherited(arguments);
 			this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
 			if (this.parentWidget && this.parentWidget.toggleable) {
@@ -53,52 +56,27 @@ i18n) {
 					this.onLayoutChange(this.parentWidget.open);
 				})));
 			}
-			// this.map.on('click', lang.hitch(this, function (evt){
-			// }));
-			this.map._layers.roads.on('click', lang.hitch(this, function (evt) {
-				if (this.mapClickMode === 'editor') {
-					var layerSel = this.map.getLayer("roads");
-				// 	this.getRelatedRecords(this.objectId, layerSel, evt.graphic.attributes);
-				// 	this.getRelatedAlias(this.objectId, layerSel, evt.graphic.attributes);
-					relatedTable.clearSelection();
-					// this.map.infoWindow.setTitle("Searching for related items...");
-					// this.map.infoWindow.show(evt.screenPoint, this.map.getInfoWindowAnchor(evt.screenPoint));
-					var graphicAttributes = evt.graphic.attributes;
-					var objectId = evt.graphic.attributes['OBJECTID'];
-					var title = this.getRoadName(objectId, layerSel, graphicAttributes);
-					console.log('title:', title);
-
-					var relatedQuery = new RelationshipQuery();
-					relatedQuery.outFields = ["*"];
-					relatedQuery.relationshipId = 1;
-					relatedQuery.objectIds = [objectId];
-
-					layerSel.queryRelatedFeatures(relatedQuery, lang.hitch(this, function (relatedRecords) {
-						var fset = relatedRecords[objectId];
-						var content = "";
-						if (fset) {
-							document.getElementById('attributeInspectorDiv').style.display = 'block';
-							// this.map.infoWindow.setTitle(title || "No Title");
-							var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
-								return feature.attributes[relatedTable.objectIdField];
-							});
-							var selectQuery = new Query();
-							selectQuery.objectIds = relatedObjectIds;
-							relatedTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
-
-						} else {
-							content += "No Records Exist For this Point <button id='addFirstButton' type='button' onClick='addNewRecord()'>Add New</button>";
-							document.getElementById('relatedDiv').innerHTML = content;
-							// document.getElementById('attributeInspectorDiv').style.display = 'none';
-							// this.map.infoWindow.setTitle("No Related Items");
-						}
-					}));
-				};
-			}));
-			var relatedTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
+			
+			roadLayer.on('selection-complete', handleSelection);
+			function handleSelection() {
+				console.log('handling selection...');
+				selectedLayer = roadLayer;
+				selectedFeature = roadLayer._selectedFeatures;
+				selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
+				callSelf.getRelatedData(selectedFeature.attributes, selectedLayer);
+			}
+			map.infoWindow.on('show', handleInfoWindow);
+			function handleInfoWindow() {
+				console.log('Info Window created...');
+			}
+			this.loadRelatedTable();
+		},
+		loadRelatedTable: function() {
+			relatedTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
 				mode: FeatureLayer.MODE_ONDEMAND,
 				id: "relatedTable",
-				outFields: ["ALIAS_PREDIR_IND",
+				outFields: ["OBJECTID",
+							"ALIAS_PREDIR_IND",
 							"ALIAS_NM",
 							"ALIAS_SUFFIX_NM",
 							"ALIAS_POST_DIR",
@@ -113,9 +91,9 @@ i18n) {
 			relatedTable.on("load", lang.hitch(this, function () {
 				var layerInfos = [{
 					'featureLayer': relatedTable,
-						'showAttachments': false,
-						'isEditable': true,
-						'fieldInfos': arrayUtils.map(relatedTable.fields, function (field) {
+					'showAttachments': false,
+					'isEditable': true,
+					'fieldInfos': arrayUtils.map(relatedTable.fields, function (field) {
 						return {
 							'fieldName': field.name,
 							'isEditable': field.editable,
@@ -141,119 +119,71 @@ i18n) {
 				// map.infoWindow.resize(350, 240);
 			}));
 		},
-		addNewRecord: function() {
-			var guid = selectedPointFeature.GlobalID
-			if(selectedPointFeature.SystemType === 0){  //property maintenance feature
-				relatedLayer = propMaintLayer;
-				dojo.style(dojo.query(".propSaveButton")[0],"visibility","visible");
-				var newAttributes = {attributes:{PointID:"" + guid + "",Date:new Date().getTime(),MaintType:"Preventative",Crew:"?",CleanOut:"N",Float:"N",Basket:"N",BioTube:"N",Lid:"N",PumpMotor:"N",ControlPanel:"N",CVTank:"N",CVStreet:"N",DschrgHose:"N",Lateral:"N",CleanSeptic:"N",SealSeptic:"N",Starter:"N",Relay:"N",Hmeter:"N",HighLevel:"N",SelfCorrect:"N",Other:"N"}};
-			}else{
-				relatedLayer = collectSysLayer;
-				dojo.style(dojo.query(".collectSysSaveButton")[0],"visibility","visible");
-				var newAttributes = {attributes:{PointID:"" + guid + "",Date:new Date().getTime(),MaintType:"Preventative",Crew:"?",AirRlfValve:"N",AVRVrebuild:"N",AVRVreplace:"N",Valve:"N",SewerClean:"N",SewerReplace:"N",LSchkPump:"N",Pump:"N",Float:"N",PumpRail:"N",Starter:"N",Relay:"N",HourMeter:"N",SSofVFD:"N",HighLevel:"N",SelfCorrected:"N",Other:"N"}};				
-			}		
-			//dojo.style(saveButton[0],"visibility","visible");
-			
-			
-			relatedLayer.applyEdits([newAttributes],null,null,null,
-			function(error){
-			if(error){
-			}
-			}
-			);
-			if(dojo.byId('addFirstButton')){
-				var content = "<b><span id='pointAddress'>" + (selectedPointFeature.Address === null ? "unknown address":selectedPointFeature.Address ) + "</span></b><br/>Click an event below to edit or <button id='addNewButton' type='button' onClick='addNewRecord()'>Add New</button><ul id='relatedRecords'>";
-				dojo.byId('relatedDiv').innerHTML = content;
-			}
-		},
-		getRoadName: function(oid, layer, graphicAttributes) {
-			// var content;
-			var full_name = "";
-			var relatedQuery = new RelationshipQuery();
-			relatedQuery.objectIds = [oid];
-			relatedQuery.outFields = ["*"];
-			relatedQuery.relationshipId = 2;
-			relatedQuery.returnGeometry = false;
-			var query_result = layer.queryRelatedFeatures(relatedQuery);
-			promises = all(query_result);
-			promises.then(handleQueryResults);
-			function handleQueryResults(results)  {
-				var selectedFeature, attr;
-				// var content = "<table class='attrTable'>";
-				selectedFeature = results.promise;
-				// console.log(selectedFeature);
-				attr = selectedFeature[oid].features["0"].attributes;
-				full_name = attr['FULL_NAME'];
-				console.log('ObjectID: ', oid, '\nRoad Name: ', full_name);
-				// content += string.substitute("<tr><td class='attrName'>${label}</td><td class='attrValue'> ${value}</td></tr>",{label: 'Road Name', value: full_name});
-				// content += "</table>";
-				// document.getElementById('editorResult').innerHTML = content;
-				return full_name.toString();
-			};
-			console.log('full_name: ',full_name);
-			return full_name;
-		},
-		/*getRelatedAlias: function(oid, layer, graphicAttributes) {
-			var content;
-			var relatedQuery = new RelationshipQuery();
-			relatedQuery.objectIds = [oid];
-			relatedQuery.outFields = ["*"];
-			relatedQuery.relationshipId = 1;
-			relatedQuery.returnGeometry = false;
-			var query_result = layer.queryRelatedFeatures(relatedQuery);
-			promises = all(query_result);
-			promises.then(handleQueryResults);
-			function handleQueryResults(results)  {
-				var selectedFeature, attr;
-				var content = "<table class='attrTable'>";
-				selectedFeature = results.promise;
-				console.log('selectedFeature', selectedFeature);
-				field_names = [	'ALIAS_PREDIR_IND',
-								'ALIAS_NM',
-								'ALIAS_SUFFIX_NM',
-								'ALIAS_POST_DIR',
-								'ALIAS_LEFT_LO_ADDR',
-								'ALIAS_LEFT_HI_ADDR',
-								'ALIAS_RIGHT_LO_ADDR',
-								'ALIAS_RIGHT_HI_ADDR',
-								'LMIXADDR',
-								'RMIXADDR',
-								'ALIAS_JURIS'];
-				field_labels = ['Alias Pre Direction Type',
-								'Alias Name',
-								'Alias Suffix Type',
-								'Alias Post Direction',
-								'Left Low Address',
-								'Left High Address',
-								'Right Low Address',
-								'Right High Address',
-								'Left Mixed Address',
-								'Right Mixed Address',
-								'Alias Jurisdiction']
-				field_values = [];
-				if (selectedFeature[oid]) {
-					selectedFeature = selectedFeature[oid].features["0"];
-					selectedFeatureAliasTable = selectedFeature;
-					console.log('selectedFeatureNew', selectedFeature);
-					attr = selectedFeature.attributes;
-					field_names.forEach(function(item, index) {
-						if (attr[field_names[index]]) {
-							content += string.substitute("<tr><td class='attrName'>${label}:</td><td class='attrValue'><input value='${value}'></input></td></tr>",{label: field_labels[index], value: attr[field_names[index]]});
-						} else {
-							content += string.substitute("<tr><td class='attrName'>${label}:</td><td class='attrValue'><input placeholder='no value'></input></td></tr>",{label: field_labels[index]});
-						}
+		getRelatedData: function(selectedFeature, selectedLayer) {
+			console.log('getRelatedData()...');
+			// Build Road Alias query
+			var queryRoadsegAlias = new RelationshipQuery();
+			queryRoadsegAlias.outFields = ["*"];
+			queryRoadsegAlias.relationshipId = 1;
+			queryRoadsegAlias.objectIds = [selectedFeature['OBJECTID']];
+			selectedLayer.queryRelatedFeatures(queryRoadsegAlias, lang.hitch(this, function (relatedRecords) {
+				var fset = relatedRecords[selectedFeature['OBJECTID']];
+				relatedDivContent = "";
+				// Fill in sidebar with RoadSeg_Alias fields if a corresponding record exists
+				if (fset) {
+					console.log('alias found!!!');
+					document.getElementById('attributeInspectorDiv').style.display = 'block';
+					document.getElementById('relatedDiv').innerHTML = "";
+					// this.map.infoWindow.setTitle(title || "No Title");
+					var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
+						return feature.attributes[relatedTable.objectIdField];
 					});
+					var selectQuery = new Query();
+					selectQuery.objectIds = relatedObjectIds;
+					relatedTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
 				} else {
-					field_names.forEach(function(item, index) {
-						content += string.substitute("<tr><td class='attrName'>${label}:</td><td class='attrValue'><input placeholder='no value'></input></td></tr>",{label: field_labels[index]});
-					});
-				}
-				content += "</table>";
-				document.getElementById('editorResult').innerHTML += content;
-			};
-		},*/
+					console.log('No alias found...');
+					document.getElementById('attributeInspectorDiv').style.display = 'none';
+				// If no alias exists in the related table, create the 'Add New' button
+					relatedDivContent += "No alias exists for this road segment.<br /><br /> <button id='addFirstButton' type='button' align='center'>Add New</button>";
+					document.getElementById('relatedDiv').innerHTML = relatedDivContent;
+					var callSelf = this;
+					document.getElementById("addFirstButton").onclick = function() {
+						console.log('adding new alias...');
+						var newAttributes = {
+						geometry: null,
+						attributes: {
+							ROADSEGID: selectedFeature['ROADSEGID'],
+							POSTDATE:new Date().getTime(),
+							ALIAS_JURIS: null,
+							POSTID: "",
+							ALIAS_PREDIR_IND: null,
+							ALIAS_NM: null,
+							ALIAS_SUFFIX_NM: null,
+							ALIAS_POST_DIR: null,
+							ALIAS_LEFT_LO_ADDR: null,
+							ALIAS_LEFT_HI_ADDR: null,
+							ALIAS_RIGHT_LO_ADDR: null,
+							ALIAS_RIGHT_HI_ADDR: null,
+							LMIXADDR: null,
+							RMIXADDR: null
+						}
+						};
+						relatedTable.applyEdits([newAttributes],null,null,null,
+						function(error){
+							if(error){
+								console.log(error);
+						}}).then( function() {
+							callSelf.getRelatedData(selectedFeature,selectedLayer);
+							return;
+						});
+					};
+				};
+			}));
+		},
 		toggleEditing: function () {
 			if (!this.isEdit) {
+				console.log('toggle on...');
 				var ops = lang.clone(this.settings);
 				ops.map = this.map;
 				ops.layerInfos = this.layerInfos;
@@ -276,12 +206,13 @@ i18n) {
 				topic.publish('mapClickMode/setCurrent', 'editor');
 
 			} else {
+				console.log('toggle off...');
 				this.endEditing();
 				topic.publish('mapClickMode/setCurrent', 'identify');
-				// document.getElementById('attributeInspectorDiv').style.display = 'none';
 			}
 		},
 		endEditing: function () {
+			console.log('endEditing()...');
 			if (this.editor && this.editor.destroyRecursive) {
 				this.editor.destroyRecursive();
 			}
@@ -291,7 +222,6 @@ i18n) {
 			this.editor = null;
 			document.getElementById('attributeInspectorDiv').style.display = 'none';
 		},
-
 		onLayoutChange: function (open) {
 			// end edit on close of title pane
 			if (!open && this.mapClickMode === 'editor') {

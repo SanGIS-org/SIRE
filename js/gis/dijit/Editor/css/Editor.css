@@ -9,12 +9,16 @@
 	line-height: 14px;
 	margin: 3px 0;
 }
-.esriAttributeInspector {
-	margin-bottom: 3rem;
-}
 #attributeInspectorMsg {
 	color: green;
 	font-size: .9rem;
 	font-weight: bold;
 	font-style: italic;
+}
+.relatedDiv {
+	text-align: center;
+}
+
+.esriAttributeInspector .atiButtons {
+	display:none;
 }

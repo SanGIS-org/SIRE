@@ -86,6 +86,7 @@ define([
 				disableGeometryUpdate: true,
 				enableUndoRedo: true,
 				fieldInfos: [
+					{fieldName: 'OBJECTID', isEditable: false, label: 'ObjectID'},
 					{fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
 					{fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
 					{fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'},
