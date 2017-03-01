@@ -63,10 +63,31 @@ i18n) {
 				selectedLayer = roadLayer;
 				selectedFeature = roadLayer._selectedFeatures;
 				selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
-				callSelf.getRelatedData(selectedFeature.attributes, selectedLayer);
+				if (selectedFeature != undefined) {
+					callSelf.getRelatedData(selectedFeature.attributes, selectedLayer);
+				} else {
+					document.getElementById('attributeInspectorDiv').style.display = 'none';
+					document.getElementById('relatedDiv').innerHTML = '<b>No Feature Selected.</b>';
+				}
 			}
-			map.infoWindow.on('show', handleInfoWindow);
+
+				// 	var lInfo = attInspector.layerInfos[0];      // get the correct layerInfo  
+				// 	var f = lInfo.fieldInfos[4];                 // get the required field from the LInfo.fieldInfos  
+				// 	if(f.dijit){  
+				// 		f.dijit.constraints && (f.dijit.constraints.pattern = "#");  
+				// 		f.dijit.setValue(feature.attributes[f.fieldName]);  
+				// 	}
+
+			// map.infoWindow.on('show', handleInfoWindow);
+			if (this.mapClickMode == 'editor') {
+				// callSelf.editor.on('attribute-change', handleAttributeChange);
+			}
+			function handleAttributeChange() {
+				console.log('attribute changed...');
+			}
 			function handleInfoWindow() {
+				console.log('editor: ', callSelf.editor);
+				console.log('editor.attributeInspector: ', callSelf.editor.attributeInspector);
 				console.log('Info Window created...');
 			}
 			this.loadRelatedTable();
@@ -113,10 +134,7 @@ i18n) {
 				});
 				attInspector.on("delete", function (evt) {
 					evt.feature.getLayer().applyEdits(null, null, [evt.feature]);
-					// map.infoWindow.hide();
 				});
-				// map.infoWindow.setContent(attInspector.domNode);
-				// map.infoWindow.resize(350, 240);
 			}));
 		},
 		getRelatedData: function(selectedFeature, selectedLayer) {
@@ -128,13 +146,12 @@ i18n) {
 			queryRoadsegAlias.objectIds = [selectedFeature['OBJECTID']];
 			selectedLayer.queryRelatedFeatures(queryRoadsegAlias, lang.hitch(this, function (relatedRecords) {
 				var fset = relatedRecords[selectedFeature['OBJECTID']];
-				relatedDivContent = "";
+				// relatedDivContent = "";
 				// Fill in sidebar with RoadSeg_Alias fields if a corresponding record exists
 				if (fset) {
 					console.log('alias found!!!');
 					document.getElementById('attributeInspectorDiv').style.display = 'block';
-					document.getElementById('relatedDiv').innerHTML = "";
-					// this.map.infoWindow.setTitle(title || "No Title");
+					document.getElementById('relatedDiv').style.display = 'none';
 					var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
 						return feature.attributes[relatedTable.objectIdField];
 					});
@@ -142,10 +159,11 @@ i18n) {
 					selectQuery.objectIds = relatedObjectIds;
 					relatedTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
 				} else {
+					// If no alias exists in the related table, create the 'Add New' button
 					console.log('No alias found...');
 					document.getElementById('attributeInspectorDiv').style.display = 'none';
-				// If no alias exists in the related table, create the 'Add New' button
-					relatedDivContent += "No alias exists for this road segment.<br /><br /> <button id='addFirstButton' type='button' align='center'>Add New</button>";
+					document.getElementById('relatedDiv').style.display = 'block';
+					relatedDivContent = "No alias exists for this road segment.<br /><br /> <button id='addFirstButton' type='button' align='center'>Add New</button>";
 					document.getElementById('relatedDiv').innerHTML = relatedDivContent;
 					var callSelf = this;
 					document.getElementById("addFirstButton").onclick = function() {
@@ -212,7 +230,7 @@ i18n) {
 			}
 		},
 		endEditing: function () {
-			console.log('endEditing()...');
+			// Stops editing and clears appropriate editing divs
 			if (this.editor && this.editor.destroyRecursive) {
 				this.editor.destroyRecursive();
 			}

@@ -15,10 +15,19 @@
 	font-weight: bold;
 	font-style: italic;
 }
-.relatedDiv {
+#relatedDiv {
 	text-align: center;
+	padding: 1rem;
+	display:none;
 }
 
+#attributeInspectorDiv {
+	display:none;
+}
 .esriAttributeInspector .atiButtons {
 	display:none;
+}
+
+.esriAttributeInspector .atiAttributes {
+	padding: 1rem 0;
 }
