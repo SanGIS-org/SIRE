@@ -1,41 +1,39 @@
 define([
-	'dojo/_base/declare',
-	'dijit/_WidgetBase',
-	'dijit/_TemplatedMixin',
-	'dijit/_WidgetsInTemplateMixin',
-	"dojo/_base/array",
-	'dojo/_base/lang',
-	'dojo/dom-construct',
-	'dojo/topic',
-	'dojo/aspect',
-	"esri/tasks/query", 
-	"esri/layers/FeatureLayer",
-	'esri/tasks/RelationshipQuery',
-	'esri/dijit/AttributeInspector',
-	'dojo/promise/all',
-	'dojo/string',
-	'dojo/text!./Editor/templates/Editor.html',
-	'dojo/i18n!./Editor/nls/resource',
-	'xstyle/css!./Editor/css/Editor.css',
-	'dijit/form/Button'
-], function (declare, 
-_WidgetBase, 
-_TemplatedMixin, 
-_WidgetsInTemplateMixin, 
-arrayUtils, 
-lang, 
-domConstruct, 
-topic, 
+'dojo/_base/declare',
+'dijit/_WidgetBase',
+'dijit/_TemplatedMixin',
+'dijit/_WidgetsInTemplateMixin',
+"dojo/_base/array",
+'dojo/_base/lang',
+'dojo/dom-construct',
+'dojo/topic',
+'dojo/aspect',
+"esri/tasks/query", 
+"esri/layers/FeatureLayer",
+'esri/tasks/RelationshipQuery',
+'esri/dijit/AttributeInspector',
+'dojo/promise/all',
+'dojo/text!./Editor/templates/Editor.html',
+'dojo/i18n!./Editor/nls/resource',
+'xstyle/css!./Editor/css/Editor.css',
+'dijit/form/Button'
+], function (declare,
+_WidgetBase,
+_TemplatedMixin,
+_WidgetsInTemplateMixin,
+arrayUtils,
+lang,
+domConstruct,
+topic,
 aspect,
-Query, 
-FeatureLayer, 
-RelationshipQuery, 
-AttributeInspector, 
+Query,
+FeatureLayer,
+RelationshipQuery,
+AttributeInspector,
 all,
-string, 
-template, 
+template,
 i18n) {
-	var selectedFeature, selectedLayer, relatedDivContent, relatedTable;
+	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, addAliasButton, roadName;
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -45,10 +43,6 @@ i18n) {
 		mapClickMode: null,
 
 		postCreate: function () {
-			var callSelf = this;
-			var map = this.map;
-			var roadLayer = this.map.getLayer("roads");
-
 			this.inherited(arguments);
 			this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
 			if (this.parentWidget && this.parentWidget.toggleable) {
@@ -56,46 +50,19 @@ i18n) {
 					this.onLayoutChange(this.parentWidget.open);
 				})));
 			}
-			
-			roadLayer.on('selection-complete', handleSelection);
-			function handleSelection() {
-				console.log('handling selection...');
-				selectedLayer = roadLayer;
-				selectedFeature = roadLayer._selectedFeatures;
-				selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
-				if (selectedFeature != undefined) {
-					callSelf.getRelatedData(selectedFeature.attributes, selectedLayer);
-				} else {
-					document.getElementById('attributeInspectorDiv').style.display = 'none';
-					document.getElementById('relatedDiv').innerHTML = '<b>No Feature Selected.</b>';
-				}
-			}
+			var callSelf = this;
+			var map = this.map;
+			roadLayer = this.map.getLayer("roads");
+			interLayer = this.map.getLayer("Intersections");
+			this.loadRoadsegAlias();
 
-				// 	var lInfo = attInspector.layerInfos[0];      // get the correct layerInfo  
-				// 	var f = lInfo.fieldInfos[4];                 // get the required field from the LInfo.fieldInfos  
-				// 	if(f.dijit){  
-				// 		f.dijit.constraints && (f.dijit.constraints.pattern = "#");  
-				// 		f.dijit.setValue(feature.attributes[f.fieldName]);  
-				// 	}
-
-			// map.infoWindow.on('show', handleInfoWindow);
-			if (this.mapClickMode == 'editor') {
-				// callSelf.editor.on('attribute-change', handleAttributeChange);
-			}
-			function handleAttributeChange() {
-				console.log('attribute changed...');
-			}
-			function handleInfoWindow() {
-				console.log('editor: ', callSelf.editor);
-				console.log('editor.attributeInspector: ', callSelf.editor.attributeInspector);
-				console.log('Info Window created...');
-			}
-			this.loadRelatedTable();
+			roadLayer.on('selection-complete', lang.hitch(this,callSelf.handleSelection));
+			map.infoWindow.on('hide', lang.hitch(this,callSelf.noSelection));
 		},
-		loadRelatedTable: function() {
-			relatedTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
+		loadRoadsegAlias: function() {
+			aliasTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
 				mode: FeatureLayer.MODE_ONDEMAND,
-				id: "relatedTable",
+				id: "aliasTable",
 				outFields: ["OBJECTID",
 							"ALIAS_PREDIR_IND",
 							"ALIAS_NM",
@@ -109,12 +76,12 @@ i18n) {
 							"RMIXADDR",
 							"ALIAS_JURIS"]
 			});
-			relatedTable.on("load", lang.hitch(this, function () {
+			aliasTable.on("load", lang.hitch(this, function () {
 				var layerInfos = [{
-					'featureLayer': relatedTable,
+					'featureLayer': aliasTable,
 					'showAttachments': false,
 					'isEditable': true,
-					'fieldInfos': arrayUtils.map(relatedTable.fields, function (field) {
+					'fieldInfos': arrayUtils.map(aliasTable.fields, function (field) {
 						return {
 							'fieldName': field.name,
 							'isEditable': field.editable,
@@ -130,15 +97,36 @@ i18n) {
 					evt.feature.attributes[evt.fieldName] = evt.fieldValue;
 					evt.feature.getLayer().applyEdits(null, [evt.feature], null);
 					var msg = evt.fieldName + " changed to " + evt.fieldValue;
-					document.getElementById('attributeInspectorMsg').innerHTML = msg;
+					document.getElementById('attributeUpdateMessage').innerHTML = msg;
 				});
 				attInspector.on("delete", function (evt) {
 					evt.feature.getLayer().applyEdits(null, null, [evt.feature]);
 				});
 			}));
 		},
+		/**
+		* Pulls road name from 'gisdata.T.ROADNAME' and assigns it to the InfoWindow Title
+		* @param selectedFeature {Feature} - the feature clicked
+		**/
+		getRoadName: function(selectedFeature) {
+			var queryRoadName = new RelationshipQuery();
+			queryRoadName.outFields = ['FULL_NAME'];
+			queryRoadName.relationshipId = 2;
+			queryRoadName.objectIds = [selectedFeature['OBJECTID']];
+			selectedLayer.queryRelatedFeatures(queryRoadName,lang.hitch(this, function (relatedRecords) {
+				var fset = relatedRecords[selectedFeature['OBJECTID']].features[0].attributes['FULL_NAME'];
+				if (fset) {
+					roadName = fset;
+					this.map.infoWindow.setTitle(roadName);
+				}
+			}));
+		},
+		/**
+		* Pulls alias data from 'gisdata.T.ROADSEG_ALIAS' and displays the results
+		* @param selectedFeature {Feature} - the feature clicked
+		* @param selectedLayer {FeatureLayer} - the layer for the feature clicked
+		**/
 		getRelatedData: function(selectedFeature, selectedLayer) {
-			console.log('getRelatedData()...');
 			// Build Road Alias query
 			var queryRoadsegAlias = new RelationshipQuery();
 			queryRoadsegAlias.outFields = ["*"];
@@ -146,62 +134,70 @@ i18n) {
 			queryRoadsegAlias.objectIds = [selectedFeature['OBJECTID']];
 			selectedLayer.queryRelatedFeatures(queryRoadsegAlias, lang.hitch(this, function (relatedRecords) {
 				var fset = relatedRecords[selectedFeature['OBJECTID']];
-				// relatedDivContent = "";
-				// Fill in sidebar with RoadSeg_Alias fields if a corresponding record exists
+				// If an alias record exists
 				if (fset) {
-					console.log('alias found!!!');
+					// Display number of aliases found and 'Add Another Alias' button
+					var numRecords = fset.features.length;
 					document.getElementById('attributeInspectorDiv').style.display = 'block';
-					document.getElementById('relatedDiv').style.display = 'none';
+					document.getElementById('attributeUpdateMessage').style.display = 'block';
+					if (numRecords > 1) {
+						attributeMessageContent = "<b>"+numRecords+" aliases found!</b>"
+					} else if (numRecords == 1) {
+						attributeMessageContent = '<b>Alias found!</b>';
+					}
+					attributeMessageContent += "<br /><br /> <button id='addAliasButton' type='button' align='center'>Add Another Alias</button>";
+					// Collect corresponding attributes
 					var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
-						return feature.attributes[relatedTable.objectIdField];
+						return feature.attributes[aliasTable.objectIdField];
 					});
+					// Query RoadSeg_Alias records
 					var selectQuery = new Query();
 					selectQuery.objectIds = relatedObjectIds;
-					relatedTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
+					aliasTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
 				} else {
-					// If no alias exists in the related table, create the 'Add New' button
-					console.log('No alias found...');
+					// If no alias exists in the related table, create 'Add New' button
 					document.getElementById('attributeInspectorDiv').style.display = 'none';
-					document.getElementById('relatedDiv').style.display = 'block';
-					relatedDivContent = "No alias exists for this road segment.<br /><br /> <button id='addFirstButton' type='button' align='center'>Add New</button>";
-					document.getElementById('relatedDiv').innerHTML = relatedDivContent;
-					var callSelf = this;
-					document.getElementById("addFirstButton").onclick = function() {
-						console.log('adding new alias...');
-						var newAttributes = {
-						geometry: null,
-						attributes: {
-							ROADSEGID: selectedFeature['ROADSEGID'],
-							POSTDATE:new Date().getTime(),
-							ALIAS_JURIS: null,
-							POSTID: "",
-							ALIAS_PREDIR_IND: null,
-							ALIAS_NM: null,
-							ALIAS_SUFFIX_NM: null,
-							ALIAS_POST_DIR: null,
-							ALIAS_LEFT_LO_ADDR: null,
-							ALIAS_LEFT_HI_ADDR: null,
-							ALIAS_RIGHT_LO_ADDR: null,
-							ALIAS_RIGHT_HI_ADDR: null,
-							LMIXADDR: null,
-							RMIXADDR: null
-						}
-						};
-						relatedTable.applyEdits([newAttributes],null,null,null,
-						function(error){
-							if(error){
-								console.log(error);
-						}}).then( function() {
-							callSelf.getRelatedData(selectedFeature,selectedLayer);
-							return;
-						});
-					};
+					attributeMessageContent = "No alias exists for this road segment.<br /><br /> <button id='addAliasButton' type='button' align='center'>Add New</button>";
 				};
+				document.getElementById('attributeMessage').innerHTML = attributeMessageContent;
+				document.getElementById('attributeMessage').style.display = 'block';
+				var callSelf = this;
+
+				// Functionality to add new Alias record
+				document.getElementById("addAliasButton").onclick = function() {
+					var newAttributes = {
+					geometry: null,
+					attributes: {
+						ROADSEGID: selectedFeature['ROADSEGID'],
+						POSTDATE:new Date().getTime(),
+						ALIAS_JURIS: null,
+						POSTID: "",
+						ALIAS_PREDIR_IND: null,
+						ALIAS_NM: null,
+						ALIAS_SUFFIX_NM: null,
+						ALIAS_POST_DIR: null,
+						ALIAS_LEFT_LO_ADDR: null,
+						ALIAS_LEFT_HI_ADDR: null,
+						ALIAS_RIGHT_LO_ADDR: null,
+						ALIAS_RIGHT_HI_ADDR: null,
+						LMIXADDR: null,
+						RMIXADDR: null
+					}
+					};
+					aliasTable.applyEdits([newAttributes],null,null,null,
+					function(error){
+						if(error){
+					}}).then( function() {
+						// Restart function to show newly created alias
+						callSelf.getRelatedData(selectedFeature,selectedLayer);
+						return;
+					});
+				};
+				
 			}));
 		},
 		toggleEditing: function () {
 			if (!this.isEdit) {
-				console.log('toggle on...');
 				var ops = lang.clone(this.settings);
 				ops.map = this.map;
 				ops.layerInfos = this.layerInfos;
@@ -224,7 +220,6 @@ i18n) {
 				topic.publish('mapClickMode/setCurrent', 'editor');
 
 			} else {
-				console.log('toggle off...');
 				this.endEditing();
 				topic.publish('mapClickMode/setCurrent', 'identify');
 			}
@@ -239,6 +234,7 @@ i18n) {
 			this.isEdit = false;
 			this.editor = null;
 			document.getElementById('attributeInspectorDiv').style.display = 'none';
+			document.getElementById('attributeMessage').style.display = 'none';
 		},
 		onLayoutChange: function (open) {
 			// end edit on close of title pane
@@ -252,6 +248,33 @@ i18n) {
 			if (mode !== 'editor') {
 				this.endEditing();
 			}
+		},
+		/**
+		* Handles action when user selects a feature in 'editor' mode
+		* Also handles if a user clicks a featureless area of map in 'editor' mode
+		**/
+		handleSelection: function() {
+			selectedLayer = roadLayer;
+			selectedFeature = roadLayer._selectedFeatures;
+			selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
+			if (selectedFeature != undefined) {
+				this.getRoadName(selectedFeature.attributes, selectedLayer);
+				this.getRelatedData(selectedFeature.attributes, selectedLayer);
+			} else {
+				this.noSelection();
+			}
+		},
+		/**
+		* Clears feature selections and corresponding information in side panel
+		**/
+		noSelection: function() {
+			roadLayer.clearSelection();
+			interLayer.clearSelection();
+			document.getElementById('attributeInspectorDiv').style.display = 'none';
+			document.getElementById('attributeUpdateMessage').innerHTML = '';
+			document.getElementById('attributeUpdateMessage').style.display = 'none';
+			document.getElementById('attributeMessage').innerHTML = '<b>No Feature Selected.</b>';
+			document.getElementById('attributeMessage').style.display = 'block';
 		}
 	});
 });

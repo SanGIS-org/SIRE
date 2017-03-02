@@ -9,25 +9,51 @@
 	line-height: 14px;
 	margin: 3px 0;
 }
-#attributeInspectorMsg {
+.messagesContainer {
+	text-align: center;
+	padding: .5rem;
+}
+#attributeMessage {
+	padding: .5rem;
+	display: none;
+}
+#attributeUpdateMessage {
 	color: green;
 	font-size: .9rem;
 	font-weight: bold;
 	font-style: italic;
+	padding: .5rem;
+	display: none;
 }
-#relatedDiv {
-	text-align: center;
-	padding: 1rem;
-	display:none;
-}
-
 #attributeInspectorDiv {
 	display:none;
 }
-.esriAttributeInspector .atiButtons {
+.esriAttributeInspector .atiButtons .atiDeleteButton {
 	display:none;
 }
-
 .esriAttributeInspector .atiAttributes {
-	padding: 1rem 0;
+	padding: .5rem 0;
+}
+.esriPopup .titlePane {
+	padding: .5rem;
+}
+.esriPopup .title {
+	padding-left: 3px
+}
+.esriPopup .titleButton.maximize {
+    right: 27px;
+    background-position: -55px 0;
+    width: 11px;
+    height: 11px;
+    top: 10px;
+    padding: .5rem 0;
+}
+.esriPopup .titleButton.close {
+    right: 8px;
+    background-position: 0 0;
+    width: 12px;
+    height: 17px;
+}
+.esriPopup .titleButton {
+	top: 7px;
 }

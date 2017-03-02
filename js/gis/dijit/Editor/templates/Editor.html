@@ -1,6 +1,8 @@
 <div>
-    <div id="attributeInspectorMsg"></div>
-    <div id="relatedDiv"></div>
+    <div class="messagesContainer">
+        <div id="attributeMessage"></div>
+        <div id="attributeUpdateMessage"></div>
+    </div>
     <div id="attributeInspectorDiv"></div>
     <div style="text-align:center;">
         <button data-dojo-type="dijit/form/Button"
@@ -8,9 +10,6 @@
                 data-dojo-props="label:'${i18n.labels.startEditing}','class':'success'"
                 data-dojo-attach-point="toggleBTN"></button>
     </div>
-	<div class="editorResult"
-		id="editorResult"
-		data-dojo-attach-point="resultAttributesNode"></div> 
     <div class="editDijit" 
          style="margin-top:5px; display:none;" 
          data-dojo-attach-point="containerNode"></div>

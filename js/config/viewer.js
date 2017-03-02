@@ -85,6 +85,7 @@ define([
 			editorLayerInfos: {
 				disableGeometryUpdate: true,
 				enableUndoRedo: true,
+				customAttributeTable: true,
 				fieldInfos: [
 					{fieldName: 'OBJECTID', isEditable: false, label: 'ObjectID'},
 					{fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
@@ -318,40 +319,13 @@ define([
 				}
 			},
 			help: {
-				include: true,
+				include: false,
 				id: 'help',
 				type: 'floating',
 				path: 'gis/dijit/Help',
 				title: 'Help',
 				options: {}
 			}
-			/*relatedRecords: {
-				include: true,
-				id: 'relatedRecords',
-				type: 'domNode',
-				srcNodeRef: 'relatedRecords',
-				path: 'gis/dijit/RelationshipTable',
-				title: 'Related Records',
-				// objectIdField: 'OBJECTID',
-				options: {
-					//required option
-					layerControlLayerInfos: true,
-
-					//optional relationships property
-					relationships: {
-						3: { //layerID (string) key refers to featurelayer id in the operationalLayers array
-							// objectIdField: 'OBJECTID',
-							2: { //relationshipID (integer) key referrs to the relationship id on the rest services page
-								//relationship tab title
-								title: 'Road Names',
-								//set exclude to true to skip this relationship
-								exclude: false,
-								//other dgrid options like columns may be included
-							}
-						}
-					}
-				}
-			}*/
 		}
 	};
 });
