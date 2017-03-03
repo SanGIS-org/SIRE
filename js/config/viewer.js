@@ -143,21 +143,23 @@ define([
 				type: 'titlePane',
 				path: 'gis/dijit/Intro',
 				title: 'Help',
-				open: false,
+				open: true,
 				position: 0,
 				options: {
-					text:	'<h3>SIRE</h3>' +
-							'<h4>Road Editor</h4><ul>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'<li>Instruction Item 123 456 789 0</li>' +
-							'</ul>'
+					text:	"<h3>SIRE</h3>" +
+							"<h4>Road Editor</h4>" +
+							"<ul>" +
+								"<li>Turn the Road and Intersection layers on and off under the 'Layers' tab</li>" +
+								"<li>Using the 'Find' tool, you can quickly search for a known RoadSegID on the Road layer.</li>" +
+								"<li>Add 'Bookmarks' to quickly zoom to that same area later.</li>" +
+								"<li>Use the 'Editor' to modify Road and Intersection data." +
+									"<ul>" +
+										"<li>Click a feature on the map to edit.</li>" +
+										"<li>Road data is modified in the popup window.</li>" +
+										"<li>Aliases can be modified and added in the left pane.</li>" +
+									"</ul>" +
+								"</li>" +
+							"</ul>"
 				}
 			},
 			search: {

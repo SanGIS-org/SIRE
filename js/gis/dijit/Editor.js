@@ -1,22 +1,22 @@
 define([
-'dojo/_base/declare',
-'dijit/_WidgetBase',
-'dijit/_TemplatedMixin',
-'dijit/_WidgetsInTemplateMixin',
-"dojo/_base/array",
-'dojo/_base/lang',
-'dojo/dom-construct',
-'dojo/topic',
-'dojo/aspect',
-"esri/tasks/query", 
-"esri/layers/FeatureLayer",
-'esri/tasks/RelationshipQuery',
-'esri/dijit/AttributeInspector',
-'dojo/promise/all',
-'dojo/text!./Editor/templates/Editor.html',
-'dojo/i18n!./Editor/nls/resource',
-'xstyle/css!./Editor/css/Editor.css',
-'dijit/form/Button'
+	'dojo/_base/declare',
+	'dijit/_WidgetBase',
+	'dijit/_TemplatedMixin',
+	'dijit/_WidgetsInTemplateMixin',
+	"dojo/_base/array",
+	'dojo/_base/lang',
+	'dojo/dom-construct',
+	'dojo/topic',
+	'dojo/aspect',
+	"esri/tasks/query", 
+	"esri/layers/FeatureLayer",
+	'esri/tasks/RelationshipQuery',
+	'esri/dijit/AttributeInspector',
+	'dojo/promise/all',
+	'dojo/text!./Editor/templates/Editor.html',
+	'dojo/i18n!./Editor/nls/resource',
+	'xstyle/css!./Editor/css/Editor.css',
+	'dijit/form/Button'
 ], function (declare,
 _WidgetBase,
 _TemplatedMixin,
@@ -221,7 +221,7 @@ i18n) {
 
 			} else {
 				this.endEditing();
-				topic.publish('mapClickMode/setCurrent', 'identify');
+				topic.publish('mapClickMode/setDefault');
 			}
 		},
 		endEditing: function () {
