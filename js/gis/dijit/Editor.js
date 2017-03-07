@@ -33,7 +33,7 @@ AttributeInspector,
 all,
 template,
 i18n) {
-	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, addAliasButton, roadName;
+	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, addAliasButton, roadName, ai;
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -56,10 +56,12 @@ i18n) {
 			interLayer = this.map.getLayer("Intersections");
 			this.loadRoadsegAlias();
 
-			roadLayer.on('selection-complete', lang.hitch(this,callSelf.handleSelection));
-			map.infoWindow.on('hide', lang.hitch(this,callSelf.noSelection));
+			roadLayer.on('selection-complete', lang.hitch(this, callSelf.handleSelection));
+			map.infoWindow.on('hide', lang.hitch(this, callSelf.noSelection));
+			map.infoWindow.on('show', lang.hitch(this, callSelf.removeCommas));
 		},
 		loadRoadsegAlias: function() {
+			console.log('loadRoadsegAlias()...');
 			aliasTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
 				mode: FeatureLayer.MODE_ONDEMAND,
 				id: "aliasTable",
@@ -109,6 +111,7 @@ i18n) {
 		* @param selectedFeature {Feature} - the feature clicked
 		**/
 		getRoadName: function(selectedFeature) {
+			console.log('getRoadName()...');
 			var queryRoadName = new RelationshipQuery();
 			queryRoadName.outFields = ['FULL_NAME'];
 			queryRoadName.relationshipId = 2;
@@ -127,6 +130,7 @@ i18n) {
 		* @param selectedLayer {FeatureLayer} - the layer for the feature clicked
 		**/
 		getRelatedData: function(selectedFeature, selectedLayer) {
+			console.log('getRelatedData()...');
 			// Build Road Alias query
 			var queryRoadsegAlias = new RelationshipQuery();
 			queryRoadsegAlias.outFields = ["*"];
@@ -165,6 +169,7 @@ i18n) {
 
 				// Functionality to add new Alias record
 				document.getElementById("addAliasButton").onclick = function() {
+					console.log('adding new alias...');
 					var newAttributes = {
 					geometry: null,
 					attributes: {
@@ -187,6 +192,7 @@ i18n) {
 					aliasTable.applyEdits([newAttributes],null,null,null,
 					function(error){
 						if(error){
+							console.log(error);
 					}}).then( function() {
 						// Restart function to show newly created alias
 						callSelf.getRelatedData(selectedFeature,selectedLayer);
@@ -197,7 +203,9 @@ i18n) {
 			}));
 		},
 		toggleEditing: function () {
+			console.log('toggleEditing()...');
 			if (!this.isEdit) {
+				console.log('ON...');
 				var ops = lang.clone(this.settings);
 				ops.map = this.map;
 				ops.layerInfos = this.layerInfos;
@@ -212,6 +220,19 @@ i18n) {
 						settings: ops
 					}, con);
 					this.editor.startup();
+					ai = this.editor.attributeInspector;
+					// Remove thousands separator on field update
+/*					ai.on("attribute-change", function (evt) {
+						if (selectedLayer.id == 'roads') {
+							var finfos = ai.layerInfos[0].fieldInfos;
+							index = finfos.findIndex(x => x.fieldName==evt.fieldName);
+							f = finfos[index];
+							if (f.dijit) {
+								f.dijit.constraints && (f.dijit.constraints.pattern = "#");  
+								f.dijit.setValue(selectedFeature.attributes[f.fieldName]);  
+							}
+						}
+					});*/
 				}));
 
 				this.toggleBTN.set('label', this.i18n.labels.stopEditing);
@@ -220,11 +241,13 @@ i18n) {
 				topic.publish('mapClickMode/setCurrent', 'editor');
 
 			} else {
+				console.log('OFF...');
 				this.endEditing();
 				topic.publish('mapClickMode/setDefault');
 			}
 		},
 		endEditing: function () {
+			console.log('endEditing()...');
 			// Stops editing and clears appropriate editing divs
 			if (this.editor && this.editor.destroyRecursive) {
 				this.editor.destroyRecursive();
@@ -237,6 +260,7 @@ i18n) {
 			document.getElementById('attributeMessage').style.display = 'none';
 		},
 		onLayoutChange: function (open) {
+			console.log('onLayoutChange()...');
 			// end edit on close of title pane
 			if (!open && this.mapClickMode === 'editor') {
 				this.endEditing();
@@ -244,6 +268,7 @@ i18n) {
 			}
 		},
 		setMapClickMode: function (mode) {
+			console.log('setMapClickMode()...');
 			this.mapClickMode = mode;
 			if (mode !== 'editor') {
 				this.endEditing();
@@ -254,20 +279,41 @@ i18n) {
 		* Also handles if a user clicks a featureless area of map in 'editor' mode
 		**/
 		handleSelection: function() {
+			console.log('handleSelection()...');
 			selectedLayer = roadLayer;
 			selectedFeature = roadLayer._selectedFeatures;
 			selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
 			if (selectedFeature != undefined) {
 				this.getRoadName(selectedFeature.attributes, selectedLayer);
+				// this.removeCommas();
+				// console.log('ai',ai);
 				this.getRelatedData(selectedFeature.attributes, selectedLayer);
 			} else {
 				this.noSelection();
 			}
 		},
 		/**
+		* Removes initial commas from editor InfoWindow
+		**/
+		removeCommas: function() {
+			if (this.mapClickMode === 'editor'){
+				console.log('removeCommas()...');
+				var lInfo = ai.layerInfos[0];// get the correct layerInfo
+				var numericFieldIndexes = [1,2,3,4,5,18,19,20,21,22,23]
+				numericFieldIndexes.forEach( function(item) {
+					var f = lInfo.fieldInfos[item];// get the required field from the LInfo.fieldInfos
+					if(f.dijit){
+						f.dijit.constraints && (f.dijit.constraints.pattern = "#");
+						f.dijit.setValue(selectedFeature.attributes[f.fieldName]);  
+					}
+				});
+			}
+		},
+		/**
 		* Clears feature selections and corresponding information in side panel
 		**/
 		noSelection: function() {
+			console.log('noSelection()...');
 			roadLayer.clearSelection();
 			interLayer.clearSelection();
 			document.getElementById('attributeInspectorDiv').style.display = 'none';
