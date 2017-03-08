@@ -8,8 +8,9 @@ define([
 	'dojo/topic',
 	'esri/dijit/Basemap',
 	'esri/dijit/BasemapLayer',
-	'esri/geometry/Point'
-], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, i18n, topic, Basemap, BasemapLayer, Point) {
+	'esri/geometry/Point',
+	'esri/tasks/locator'
+], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, i18n, topic, Basemap, BasemapLayer, Point, Locator) {
 
 	// url to your proxy page, must be on same machine hosting you app. See proxy folder for readme.
 	esriConfig.defaults.io.proxyUrl = 'proxy/proxy.ashx';
@@ -157,24 +158,32 @@ define([
 										"<li>Click a feature on the map to edit.</li>" +
 										"<li>Road data is modified in the popup window.</li>" +
 										"<li>Aliases can be modified and added in the left pane.</li>" +
+										"<li>Changes made to the data are autosaved.</li>" +
 									"</ul>" +
 								"</li>" +
 							"</ul>"
 				}
 			},
 			search: {
-				include: true,
-				type: 'domNode',
-				path: 'esri/dijit/Search',
-				srcNodeRef: 'geocoderButton',
-				options: {
-					map: true,
-					visible: true,
-					enableInfoWindow: false,
-					enableButtonMode: true,
-					expanded: false
-				}
-			},
+                include: true,
+                type: 'domNode',
+                path: 'esri/dijit/Search',
+                srcNodeRef: 'geocoderButton',
+                options: {
+                	enableSourcesMenu: true,
+                    map: true,
+                    mapRightClickMenu: true,
+                    expanded: true,
+                    collapsible: true,
+                    sources: [{
+                    	locator: new Locator("http://gis1.sandag.org/sdgis/rest/services/REDI/REDI_COMPOSITE_LOC/GeocodeServer"),
+                            name: 'My Address Points',
+                            placeholder: 'For Real?',
+                            singleLineFieldName: 'SingleLine',
+                            enableSuggestions: false
+                    }]
+                }
+            },
 			identify: {
 				include: true,
 				id: 'identify',
