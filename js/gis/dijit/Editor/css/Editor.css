@@ -14,7 +14,7 @@
 	padding: .5rem;
 }
 #attributeMessage {
-	padding: .5rem;
+	padding: .5rem 0;
 	display: none;
 }
 #attributeUpdateMessage {

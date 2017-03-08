@@ -178,7 +178,7 @@ define([
                     sources: [{
                     	locator: new Locator("http://gis1.sandag.org/sdgis/rest/services/REDI/REDI_COMPOSITE_LOC/GeocodeServer"),
                             name: 'My Address Points',
-                            placeholder: 'For Real?',
+                            placeholder: 'Find an address...',
                             singleLineFieldName: 'SingleLine',
                             enableSuggestions: false
                     }]

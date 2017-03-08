@@ -33,7 +33,8 @@ AttributeInspector,
 all,
 template,
 i18n) {
-	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, addAliasButton, roadName, ai;
+	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, roadName, ai;
+	var missingAN = "";
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -149,7 +150,7 @@ i18n) {
 					} else if (numRecords == 1) {
 						attributeMessageContent = '<b>Alias found!</b>';
 					}
-					attributeMessageContent += "<br /><br /> <button id='addAliasButton' type='button' align='center'>Add Another Alias</button>";
+					attributeMessageContent += "<br><br> <input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>Add New Alias</button>";
 					// Collect corresponding attributes
 					var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
 						return feature.attributes[aliasTable.objectIdField];
@@ -161,43 +162,52 @@ i18n) {
 				} else {
 					// If no alias exists in the related table, create 'Add New' button
 					document.getElementById('attributeInspectorDiv').style.display = 'none';
-					attributeMessageContent = "No alias exists for this road segment.<br /><br /> <button id='addAliasButton' type='button' align='center'>Add New</button>";
+					attributeMessageContent = "No alias exists for this road segment.<br /><br /> <input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>Add New Alias</button>";
 				};
+				attributeMessageContent += missingAN;
 				document.getElementById('attributeMessage').innerHTML = attributeMessageContent;
 				document.getElementById('attributeMessage').style.display = 'block';
 				var callSelf = this;
 
 				// Functionality to add new Alias record
-				document.getElementById("addAliasButton").onclick = function() {
-					console.log('adding new alias...');
-					var newAttributes = {
-					geometry: null,
-					attributes: {
-						ROADSEGID: selectedFeature['ROADSEGID'],
-						POSTDATE:new Date().getTime(),
-						ALIAS_JURIS: null,
-						POSTID: "",
-						ALIAS_PREDIR_IND: null,
-						ALIAS_NM: null,
-						ALIAS_SUFFIX_NM: null,
-						ALIAS_POST_DIR: null,
-						ALIAS_LEFT_LO_ADDR: null,
-						ALIAS_LEFT_HI_ADDR: null,
-						ALIAS_RIGHT_LO_ADDR: null,
-						ALIAS_RIGHT_HI_ADDR: null,
-						LMIXADDR: null,
-						RMIXADDR: null
-					}
-					};
-					aliasTable.applyEdits([newAttributes],null,null,null,
-					function(error){
-						if(error){
-							console.log(error);
-					}}).then( function() {
-						// Restart function to show newly created alias
+				document.getElementById("addAliasButton").onclick = function () {
+					var newAlias = document.getElementById("newAliasName").value;
+					if (newAlias != "") {
+						console.log('adding new alias...');
+						var newAttributes = {
+						geometry: null,
+						attributes: {
+							ROADSEGID: selectedFeature['ROADSEGID'],
+							POSTDATE:new Date().getTime(),
+							ALIAS_JURIS: null,
+							POSTID: "",
+							ALIAS_PREDIR_IND: null,
+							ALIAS_NM: newAlias,
+							ALIAS_SUFFIX_NM: null,
+							ALIAS_POST_DIR: null,
+							ALIAS_LEFT_LO_ADDR: null,
+							ALIAS_LEFT_HI_ADDR: null,
+							ALIAS_RIGHT_LO_ADDR: null,
+							ALIAS_RIGHT_HI_ADDR: null,
+							LMIXADDR: null,
+							RMIXADDR: null
+						}
+						};
+						aliasTable.applyEdits([newAttributes],null,null,null,
+						function(error){
+							if(error){
+								console.log(error);
+						}}).then( function() {
+							missingAN = "";
+							// Restart function to show newly created alias
+							callSelf.getRelatedData(selectedFeature,selectedLayer);
+							return;
+						});
+					} else {
+						missingAN = "<br /><br /><span style='color:red;font-weight:bold;'>Please enter a valid alias name.</span>";
 						callSelf.getRelatedData(selectedFeature,selectedLayer);
 						return;
-					});
+					}
 				};
 				
 			}));
@@ -221,18 +231,6 @@ i18n) {
 					}, con);
 					this.editor.startup();
 					ai = this.editor.attributeInspector;
-					// Remove thousands separator on field update
-/*					ai.on("attribute-change", function (evt) {
-						if (selectedLayer.id == 'roads') {
-							var finfos = ai.layerInfos[0].fieldInfos;
-							index = finfos.findIndex(x => x.fieldName==evt.fieldName);
-							f = finfos[index];
-							if (f.dijit) {
-								f.dijit.constraints && (f.dijit.constraints.pattern = "#");  
-								f.dijit.setValue(selectedFeature.attributes[f.fieldName]);  
-							}
-						}
-					});*/
 				}));
 
 				this.toggleBTN.set('label', this.i18n.labels.stopEditing);
