@@ -6,39 +6,12 @@ define([
     'dijit/layout/ContentPane',
     'gis/dijit/RelationshipTable'
 ], function (i18n, lang, domConstruct, TabContainer, ContentPane, RelationshipTable) {
-    var formatters = {
-        relationship: function (relationship) {
-           return function (data) {
-               var container = new TabContainer({
-                   style: 'width:100%;height:300px;'
-               }, domConstruct.create('div'));
-               container.startup();
-               //delay then resize
-               setTimeout(function () {
-                   container.resize();
-               }, 200);
-               container.addChild(new RelationshipTable(lang.mixin({
-                   attributes: data.attributes,
-                   title: 'Related Records',
-                   style: 'width:100%;'
-               }, relationship)));
-               return container.domNode;
-           };
-        }
-    };
-    var linkTemplate = '<a href="{url}" target="_blank">{text}</a>';
-    function directionsFormatter (noValue, attributes) {
-        return lang.replace(linkTemplate, {
-            url: 'https://www.google.com/maps/dir/' + attributes.Address + ' Louisville, KY',
-            text: 'Get Directions'
-        });
-    }
     return {
         map: true,
         mapClickMode: false,
         mapRightClickMenu: true,
         identifyLayerInfos: true,
-        identifyTolerance: 100,
+        // identifyTolerance: 100,
         draggable: false,
         identifies: {
             roads: {

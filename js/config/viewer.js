@@ -9,8 +9,27 @@ define([
 	'esri/dijit/Basemap',
 	'esri/dijit/BasemapLayer',
 	'esri/geometry/Point',
-	'esri/tasks/locator'
-], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, i18n, topic, Basemap, BasemapLayer, Point, Locator) {
+	'esri/tasks/locator',
+	'esri/symbols/SimpleLineSymbol',
+	'esri/Color',
+	'esri/graphic',
+	'esri/tasks/query',
+], function (
+	units,
+	Extent,
+	esriConfig,
+	GeometryService,
+	ImageParameters,
+	i18n,
+	topic,
+	Basemap,
+	BasemapLayer,
+	Point,
+	Locator,
+	SimpleLineSymbol,
+	Color,
+	Graphic,
+	Query) {
 
 	// url to your proxy page, must be on same machine hosting you app. See proxy folder for readme.
 	esriConfig.defaults.io.proxyUrl = 'proxy/proxy.ashx';
@@ -85,8 +104,8 @@ define([
 			},
 			editorLayerInfos: {
 				disableGeometryUpdate: true,
-				enableUndoRedo: true,
-				customAttributeTable: true,
+				// enableUndoRedo: true,
+				// customAttributeTable: true,
 				fieldInfos: [
 					{fieldName: 'OBJECTID', isEditable: false, label: 'ObjectID'},
 					{fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
@@ -130,9 +149,8 @@ define([
 			editorLayerInfos: {
 				disableGeometryUpdate: true,
 				fieldInfos: [
-					{fieldName: 'INTERID', isEditable: false, label: 'InterID'},
-					{fieldName: 'DWPNO', isEditable: false, label: 'DWPNO'},
-					{fieldName: 'TYPE', isEditable: true, label: 'Left High Addr'}
+					{fieldName: 'OBJECTID', isEditable: false, label: 'InterID'},
+					{fieldName: 'TYPE', isEditable: true, label: 'Type'}
 				]
 			},
 		}],
@@ -164,26 +182,49 @@ define([
 							"</ul>"
 				}
 			},
+/*			mouseover: {
+				include: true,
+				type: 'invisible',
+				id: 'mouseover',
+				path: 'dijit/_WidgetBase',
+				options: {
+					map: true,
+					startup: function() {
+						var roads = this.map.getLayer('roads');
+						var highlightSymbol = new SimpleLineSymbol().setColor(new Color([0,0,255,0.5])).setWidth(5);
+						this.map.graphics.enableMouseEvents();
+						this.map.graphics.on('mouse-out', function() {
+							this._map.graphics.clear();
+						});
+
+						roads.on('mouse-over', function(evt) {
+							this._map.graphics.clear();
+							var highlightGraphic = new Graphic(evt.graphic.geometry, highlightSymbol);
+							this._map.graphics.add(highlightGraphic);
+						});
+					}
+				}
+			},*/
 			search: {
-                include: true,
-                type: 'domNode',
-                path: 'esri/dijit/Search',
-                srcNodeRef: 'geocoderButton',
-                options: {
-                	enableSourcesMenu: true,
-                    map: true,
-                    mapRightClickMenu: true,
-                    expanded: true,
-                    collapsible: true,
-                    sources: [{
-                    	locator: new Locator("http://gis1.sandag.org/sdgis/rest/services/REDI/REDI_COMPOSITE_LOC/GeocodeServer"),
-                            name: 'My Address Points',
-                            placeholder: 'Find an address...',
-                            singleLineFieldName: 'SingleLine',
-                            enableSuggestions: false
-                    }]
-                }
-            },
+				include: true,
+				type: 'domNode',
+				path: 'esri/dijit/Search',
+				srcNodeRef: 'geocoderButton',
+				options: {
+					enableSourcesMenu: true,
+					map: true,
+					mapRightClickMenu: true,
+					expanded: true,
+					collapsible: true,
+					sources: [{
+						locator: new Locator("https://gis1.sandag.org/sdgis/rest/services/REDI/REDI_COMPOSITE_LOC/GeocodeServer"),
+							name: 'My Address Points',
+							placeholder: 'Find an address...',
+							singleLineFieldName: 'SingleLine',
+							enableSuggestions: false
+					}]
+				}
+			},
 			identify: {
 				include: true,
 				id: 'identify',
@@ -336,7 +377,15 @@ define([
 				path: 'gis/dijit/Help',
 				title: 'Help',
 				options: {}
-			}
+			},
+			basemaps: {
+                include: true,
+                id: 'basemaps',
+                type: 'domNode',
+                path: 'gis/dijit/Basemaps',
+                srcNodeRef: 'basemapsDijit',
+                options: 'config/basemaps'
+            },
 		}
 	};
 });

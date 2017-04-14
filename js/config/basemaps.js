@@ -17,12 +17,12 @@ define([
         / otherwise uses keys in basemaps object below
         / values in array must match keys in basemaps object
         */
-        //basemapsToShow: ['streets', 'satellite', 'hybrid', 'topo', 'lightGray', 'gray', 'national-geographic', 'osm', 'oceans'],
-
+        // basemapsToShow: ['streets', 'satellite', 'hybrid', 'topo', 'lightGray', 'gray', 'national-geographic', 'osm', 'oceans'],
+        basemapsToShow: ['sangisBaseMap', 'sangisImagery'],
         // define all valid basemaps here.
         basemaps: {
             sangisBaseMap: {
-                title: 'sangisBaseMap',
+                title: 'SanGIS BaseMap',
                 basemap: {
                     baseMapLayers: [
                         {
@@ -31,19 +31,29 @@ define([
                     ]
                 }
             },
-            streets: {},
-            'streets-night-vector': {}, // requires v3.16 or higher
-            'streets-navigation-vector': {}, // requires v3.16 or higher
-            'streets-relief-vector': {}, // requires v3.16 or higher
-            satellite: {},
-            hybrid: {},
-            topo: {},
-            terrain: {},
-            'gray-vector': {}, // requires v3.16 or higher
-            'dark-gray-vector': {}, // requires v3.16 or higher
-            oceans: {},
-            'national-geographic': {},
-            osm: {},
+            sangisImagery: {
+                title: 'SanGIS Imagery 2014',
+                basemap: {
+                    baseMapLayers: [
+                        {
+                            url: 'https://gis.sangis.org/maps/rest/services/Public/Imagery_2014/MapServer'
+                        }
+                    ]
+                }
+            }
+            // streets: {},
+            // 'streets-night-vector': {}, // requires v3.16 or higher
+            // 'streets-navigation-vector': {}, // requires v3.16 or higher
+            // 'streets-relief-vector': {}, // requires v3.16 or higher
+            // satellite: {},
+            // hybrid: {},
+            // topo: {},
+            // terrain: {},
+            // 'gray-vector': {}, // requires v3.16 or higher
+            // 'dark-gray-vector': {}, // requires v3.16 or higher
+            // oceans: {},
+            // 'national-geographic': {},
+            // osm: {},
         }
     };
 });

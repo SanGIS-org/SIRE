@@ -121,6 +121,24 @@ define([
 
 		},
 		/**
+		* Pulls road name from 'gisdata.T.ROADNAME' and assigns it to the InfoWindow Title
+		* @param selectedFeature {Feature} - the feature clicked
+		**/
+		getRoadName: function(selectedFeature) {
+			console.log('getRoadName()...');
+			var queryRoadName = new RelationshipQuery();
+			queryRoadName.outFields = ['FULL_NAME'];
+			queryRoadName.relationshipId = 2;
+			queryRoadName.objectIds = [selectedFeature['OBJECTID']];
+			selectedLayer.queryRelatedFeatures(queryRoadName,lang.hitch(this, function (relatedRecords) {
+				var fset = relatedRecords[selectedFeature['OBJECTID']].features[0].attributes['FULL_NAME'];
+				if (fset) {
+					roadName = fset;
+					this.map.infoWindow.setTitle(roadName);
+				}
+			}));
+		},
+		/**
 		 * handles an array of layerInfos to call addLayerInfo for each layerInfo
 		 * @param {Array<layerInfo>} layerInfos The array of layer infos
 		 * @returns {undefined}
@@ -212,6 +230,7 @@ define([
 			}
 		},
 		executeIdentifyTask: function (evt) {
+			console.log('evt',evt);
 		// This function is called when a user right-clicks > Identify here
 			if (!this.checkForGraphicInfoTemplate(evt)) {
 				return;
@@ -249,7 +268,8 @@ define([
 			}));
 
 			if (identifies.length > 0) {
-				this.map.infoWindow.setTitle(this.i18n.mapInfoWindow.identifyingTitle);
+				// this.map.infoWindow.setTitle(this.i18n.mapInfoWindow.identifyingTitle);
+				this.map.infoWindow.setTitle('Testing');
 				this.map.infoWindow.setContent('<div class="loading"></div>');
 				this.map.infoWindow.show(mapPoint);
 				all(identifies).then(lang.hitch(this, 'identifyCallback', identifiedlayers), lang.hitch(this, 'identifyError'));
@@ -352,6 +372,7 @@ define([
 			array.forEach(responseArray, function (response, i) {
 				var ref = identifiedlayers[i].ref;
 				array.forEach(response, function (result) {
+					console.log('result',result);
 					result.feature.geometry.spatialReference = this.map.spatialReference; //temp workaround for ags identify bug. remove when fixed.
 					if (result.feature.infoTemplate === undefined) {
 						var infoTemplate = this.getInfoTemplate(ref, null, result);
@@ -369,6 +390,7 @@ define([
 
 				}, this);
 			}, this);
+			console.log('fset',fset);
 			this.map.infoWindow.setFeatures(fSet);
 		},
 		getFormattedFeature: function (feature) {
@@ -704,37 +726,5 @@ define([
 				}
 			}, this);
 		},
-				getRelatedRecords: function (attributes) {
-/*            if (this.deferred) {
-				this.deferred.cancel();
-			}
-			//reset the grid's data
-			this.store.setData([]);
-			this.noDataMessage = this.loadingMessage;
-			this.refresh();*/
-			
-			//get the objectID
-			var objectID = attributes[this.objectIdField];
-			if (!objectID) {
-				topic.publish('viewer/handleError', {
-					source: 'RelationshipTable',
-					error: this.objectIdField + ' ObjectIDField was not found in attributes'
-				});
-				return;
-			}
-			//build a query
-			var query = {
-				url: this.url,
-				objectIds: [objectID],
-				outFields: ['*'],
-				relationshipId: this.relationshipId
-			};
-			this.deferred = this._queryRelatedRecords(query);
-			this.deferred
-				.then(lang.hitch(this, '_handleRecords'))
-				.otherwise(lang.hitch(this, '_handleError'));
-			return this.deferred.promise;
-		}
-
 	});
 });

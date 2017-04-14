@@ -3,37 +3,39 @@ define([
 	'dijit/_WidgetBase',
 	'dijit/_TemplatedMixin',
 	'dijit/_WidgetsInTemplateMixin',
-	"dojo/_base/array",
+	'dojo/_base/array',
 	'dojo/_base/lang',
 	'dojo/dom-construct',
 	'dojo/topic',
 	'dojo/aspect',
-	"esri/tasks/query", 
-	"esri/layers/FeatureLayer",
+	'esri/tasks/query', 
+	'esri/layers/FeatureLayer',
 	'esri/tasks/RelationshipQuery',
 	'esri/dijit/AttributeInspector',
+	'dojo/dnd/Moveable',
 	'dojo/promise/all',
 	'dojo/text!./Editor/templates/Editor.html',
 	'dojo/i18n!./Editor/nls/resource',
 	'xstyle/css!./Editor/css/Editor.css',
-	'dijit/form/Button'
+	// 'dijit/form/Button'
 ], function (declare,
-_WidgetBase,
-_TemplatedMixin,
-_WidgetsInTemplateMixin,
-arrayUtils,
-lang,
-domConstruct,
-topic,
-aspect,
-Query,
-FeatureLayer,
-RelationshipQuery,
-AttributeInspector,
-all,
-template,
-i18n) {
-	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, roadName, ai;
+	_WidgetBase,
+	_TemplatedMixin,
+	_WidgetsInTemplateMixin,
+	arrayUtils,
+	lang,
+	domConstruct,
+	topic,
+	aspect,
+	Query,
+	FeatureLayer,
+	RelationshipQuery,
+	AttributeInspector,
+	Moveable,
+	all,
+	template,
+	i18n) {
+	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, roadName, ai, univ_this;
 	var missingAN = "";
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
@@ -51,15 +53,20 @@ i18n) {
 					this.onLayoutChange(this.parentWidget.open);
 				})));
 			}
-			var callSelf = this;
+			univ_this = this;
 			var map = this.map;
 			roadLayer = this.map.getLayer("roads");
 			interLayer = this.map.getLayer("Intersections");
 			this.loadRoadsegAlias();
-
-			roadLayer.on('selection-complete', lang.hitch(this, callSelf.handleSelection));
-			map.infoWindow.on('hide', lang.hitch(this, callSelf.noSelection));
-			map.infoWindow.on('show', lang.hitch(this, callSelf.removeCommas));
+			roadLayer.on('selection-complete',univ_this.handleSelection);
+			map.infoWindow.on('hide', lang.hitch(this, univ_this.noSelection));
+			map.infoWindow.on('show', lang.hitch(this, univ_this.removeCommas));
+			
+			// This bit of code makes infoWindows moveable
+			var handle = Query(".title", map.infoWindow.domNode)[0];
+	        var dnd = new Moveable(map.infoWindow.domNode, {
+	            handle: handle
+	        });
 		},
 		loadRoadsegAlias: function() {
 			console.log('loadRoadsegAlias()...');
@@ -150,7 +157,6 @@ i18n) {
 					} else if (numRecords == 1) {
 						attributeMessageContent = '<b>Alias found!</b>';
 					}
-					attributeMessageContent += "<br><br> <input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>Add New Alias</button>";
 					// Collect corresponding attributes
 					var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
 						return feature.attributes[aliasTable.objectIdField];
@@ -162,12 +168,13 @@ i18n) {
 				} else {
 					// If no alias exists in the related table, create 'Add New' button
 					document.getElementById('attributeInspectorDiv').style.display = 'none';
-					attributeMessageContent = "No alias exists for this road segment.<br /><br /> <input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>Add New Alias</button>";
+					attributeMessageContent = "No alias exists for this road segment.";
 				};
+				attributeMessageContent += "<br><br> <input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>Add New Alias</button>";
 				attributeMessageContent += missingAN;
 				document.getElementById('attributeMessage').innerHTML = attributeMessageContent;
 				document.getElementById('attributeMessage').style.display = 'block';
-				var callSelf = this;
+				var _this = this;
 
 				// Functionality to add new Alias record
 				document.getElementById("addAliasButton").onclick = function () {
@@ -200,12 +207,12 @@ i18n) {
 						}}).then( function() {
 							missingAN = "";
 							// Restart function to show newly created alias
-							callSelf.getRelatedData(selectedFeature,selectedLayer);
+							_this.getRelatedData(selectedFeature,selectedLayer);
 							return;
 						});
 					} else {
 						missingAN = "<br /><br /><span style='color:red;font-weight:bold;'>Please enter a valid alias name.</span>";
-						callSelf.getRelatedData(selectedFeature,selectedLayer);
+						_this.getRelatedData(selectedFeature,selectedLayer);
 						return;
 					}
 				};
@@ -230,9 +237,9 @@ i18n) {
 						settings: ops
 					}, con);
 					this.editor.startup();
+					console.log('this.editor',this.editor);
 					ai = this.editor.attributeInspector;
 				}));
-
 				this.toggleBTN.set('label', this.i18n.labels.stopEditing);
 				this.toggleBTN.set('class', 'danger');
 				this.isEdit = true;
@@ -276,33 +283,57 @@ i18n) {
 		* Handles action when user selects a feature in 'editor' mode
 		* Also handles if a user clicks a featureless area of map in 'editor' mode
 		**/
-		handleSelection: function() {
+		handleSelection: function(evt) {
 			console.log('handleSelection()...');
+			// if (evt.id == 'roads' || evt.target.id == 'roads') {
+			// 	console.log('________________________road selected________________________');
+			// }
 			selectedLayer = roadLayer;
 			selectedFeature = roadLayer._selectedFeatures;
+			console.log('selectedFeature',selectedFeature);
 			selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
 			if (selectedFeature != undefined) {
-				this.getRoadName(selectedFeature.attributes, selectedLayer);
-				// this.removeCommas();
-				// console.log('ai',ai);
-				this.getRelatedData(selectedFeature.attributes, selectedLayer);
+				univ_this.getRoadName(selectedFeature.attributes, selectedLayer);
+				univ_this.getRelatedData(selectedFeature.attributes, selectedLayer);
 			} else {
-				this.noSelection();
+				univ_this.noSelection();
 			}
+			function ObjectLength( object ) {
+				var length = 0;
+				for( var key in object ) {
+					if( object.hasOwnProperty(key) ) {
+						++length;
+					}
+				}
+				return length;
+			};
 		},
 		/**
 		* Removes initial commas from editor InfoWindow
 		**/
-		removeCommas: function() {
+		removeCommas: function(evt) {
 			if (this.mapClickMode === 'editor'){
 				console.log('removeCommas()...');
+				// console.log('evt',evt);
+				console.log('iw',univ_this.map.infoWindow);
+				univ_this.map.infoWindow._nextFeatureButton.id = 'nf';
+				univ_this.map.infoWindow._prevFeatureButton.id = 'pf';
+				var _this = this;
+				// document.getElementById("nf").onclick = function () {
+				// 	univ_this.removeCommas();
+				// 	return
+				// }
+				// document.getElementById("pf").onclick = function () {
+				// 	univ_this.removeCommas();
+				// 	return
+				// }
+				console.log('ai',ai);
 				var lInfo = ai.layerInfos[0];// get the correct layerInfo
-				var numericFieldIndexes = [1,2,3,4,5,18,19,20,21,22,23]
-				numericFieldIndexes.forEach( function(item) {
-					var f = lInfo.fieldInfos[item];// get the required field from the LInfo.fieldInfos
-					if(f.dijit){
-						f.dijit.constraints && (f.dijit.constraints.pattern = "#");
-						f.dijit.setValue(selectedFeature.attributes[f.fieldName]);  
+				console.log('lInfo',lInfo);
+				lInfo.fieldInfos.forEach( function(item) {
+					if(item.dijit && !item.field.domain){
+						item.dijit.constraints && (item.dijit.constraints.pattern = "#");
+						item.dijit.setValue(selectedFeature.attributes[item.fieldName]);  
 					}
 				});
 			}
@@ -314,11 +345,13 @@ i18n) {
 			console.log('noSelection()...');
 			roadLayer.clearSelection();
 			interLayer.clearSelection();
-			document.getElementById('attributeInspectorDiv').style.display = 'none';
-			document.getElementById('attributeUpdateMessage').innerHTML = '';
-			document.getElementById('attributeUpdateMessage').style.display = 'none';
-			document.getElementById('attributeMessage').innerHTML = '<b>No Feature Selected.</b>';
-			document.getElementById('attributeMessage').style.display = 'block';
+			if (this.mapClickMode == 'editor') {
+				document.getElementById('attributeInspectorDiv').style.display = 'none';
+				document.getElementById('attributeUpdateMessage').innerHTML = '';
+				document.getElementById('attributeUpdateMessage').style.display = 'none';
+				document.getElementById('attributeMessage').innerHTML = '<b>No Feature Selected.</b>';
+				document.getElementById('attributeMessage').style.display = 'block';
+			}
 		}
 	});
 });
