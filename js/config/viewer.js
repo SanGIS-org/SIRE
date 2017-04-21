@@ -89,7 +89,7 @@ define([
 			type: 'feature',
 			url: 'https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/3',
 			title: "Roads",
-			layerIDs: [ 3 ],
+			// layerIDs: [ 3 ],
 			isEditable: true,
 			options: {
 				id: 'roads',
@@ -104,15 +104,15 @@ define([
 			},
 			editorLayerInfos: {
 				disableGeometryUpdate: true,
-				// enableUndoRedo: true,
+				enableUndoRedo: true,
 				// customAttributeTable: true,
 				fieldInfos: [
 					{fieldName: 'OBJECTID', isEditable: false, label: 'ObjectID'},
 					{fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
-					{fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
 					{fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr'},
-					{fieldName: 'RHIGHADDR', isEditable: true, label: 'Right High Addr'},
+					{fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
 					{fieldName: 'RLOWADDR', isEditable: true, label: 'Right Low Addr'},
+					{fieldName: 'RHIGHADDR', isEditable: true, label: 'Right High Addr'},
 					{fieldName: 'SEGCLASS', isEditable: true, label: 'SegClass'},
 					{fieldName: 'SPEED', isEditable: true, label: 'Speed Limit'},
 					{fieldName: 'FIREDRIV', isEditable: true, label: 'Fire Drivability'},
@@ -182,6 +182,14 @@ define([
 							"</ul>"
 				}
 			},
+            growler: {
+                include: true,
+                id: 'growler',
+                type: 'domNode',
+                path: 'gis/dijit/Growler',
+                srcNodeRef: 'growlerDijit',
+                options: {}
+            },
 /*			mouseover: {
 				include: true,
 				type: 'invisible',

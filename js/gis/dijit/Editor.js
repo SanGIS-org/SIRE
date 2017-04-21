@@ -13,6 +13,7 @@ define([
 	'esri/tasks/RelationshipQuery',
 	'esri/dijit/AttributeInspector',
 	'dojo/dnd/Moveable',
+	'dojo/query',
 	'dojo/promise/all',
 	'dojo/text!./Editor/templates/Editor.html',
 	'dojo/i18n!./Editor/nls/resource',
@@ -32,11 +33,11 @@ define([
 	RelationshipQuery,
 	AttributeInspector,
 	Moveable,
+	query,
 	all,
 	template,
 	i18n) {
-	var selectedFeature, selectedLayer, attributeMessageContent, aliasTable, roadTable, roadLayer, interLayer, roadName, ai, univ_this;
-	var missingAN = "";
+	var selectedFeature, selectedLayer, aliasTable, roadTable, roadLayer, interLayer, roadName, ai, univ_this;
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -61,13 +62,16 @@ define([
 			roadLayer.on('selection-complete',univ_this.handleSelection);
 			map.infoWindow.on('hide', lang.hitch(this, univ_this.noSelection));
 			map.infoWindow.on('show', lang.hitch(this, univ_this.removeCommas));
-			
+
 			// This bit of code makes infoWindows moveable
-			var handle = Query(".title", map.infoWindow.domNode)[0];
-	        var dnd = new Moveable(map.infoWindow.domNode, {
-	            handle: handle
-	        });
+			var handle = query(".title", map.infoWindow.domNode)[0];
+			var dnd = new Moveable(map.infoWindow.domNode, {
+				handle: handle
+			});
 		},
+		/**
+		* Loads Alias table and AttributeInspector
+		**/
 		loadRoadsegAlias: function() {
 			console.log('loadRoadsegAlias()...');
 			aliasTable = new FeatureLayer("https://gis.sangis.org/maps/rest/services/Secured/SIRE/FeatureServer/7", {
@@ -103,14 +107,80 @@ define([
 				var attInspector = new AttributeInspector({
 					layerInfos: layerInfos
 				}, "attributeInspectorDiv");
+				// Handle Attribute Updates
 				attInspector.on("attribute-change", function (evt) {
+					// Block negative numeric values
+					if (!isNaN(evt.fieldValue)) {
+						if (evt.fieldValue < 0) {
+							errback();
+							return;
+						}
+					}
+					// Ensure 'LO' values are lower than 'HI' values, vise versa
+					switch(evt.fieldName) {
+						case 'ALIAS_LEFT_LO_ADDR':
+							if (isNaN(evt.fieldValue) || evt.fieldValue <= evt.feature.attributes['ALIAS_LEFT_HI_ADDR'] || evt.feature.attributes['ALIAS_LEFT_HI_ADDR'] == null) {
+								break;
+							} else {
+								errback('hilo_error','ALIAS_LEFT_LO_ADDR must be a number lower than ALIAS_LEFT_HI_ADDR');
+							}
+							return;
+						case 'ALIAS_LEFT_HI_ADDR':
+							if (isNaN(evt.fieldValue) || evt.fieldValue >= evt.feature.attributes['ALIAS_LEFT_LO_ADDR'] || evt.feature.attributes['ALIAS_LEFT_LO_ADDR'] == null) {
+								break;
+							} else {
+								errback('hilo_error','ALIAS_LEFT_HI_ADDR must be a number higher than ALIAS_LEFT_LO_ADDR');
+								return;
+							}
+						case 'ALIAS_RIGHT_LO_ADDR':
+							if (isNaN(evt.fieldValue) || evt.fieldValue <= evt.feature.attributes['ALIAS_RIGHT_HI_ADDR'] || evt.feature.attributes['ALIAS_RIGHT_HI_ADDR'] == null) {
+								break;
+							} else {
+								errback('hilo_error','ALIAS_RIGHT_LO_ADDR must be a number lower than ALIAS_RIGHT_HI_ADDR');
+								return;
+							}
+						case 'ALIAS_RIGHT_HI_ADDR':
+							if (isNaN(evt.fieldValue) || evt.fieldValue >= evt.feature.attributes['ALIAS_RIGHT_LO_ADDR'] || evt.feature.attributes['ALIAS_RIGHT_LO_ADDR'] == null) {
+								break;
+							} else {
+								errback('hilo_error','ALIAS_RIGHT_HI_ADDR must be a number higher than ALIAS_RIGHT_LO_ADDR');
+								return;
+							}
+					}
 					evt.feature.attributes[evt.fieldName] = evt.fieldValue;
-					evt.feature.getLayer().applyEdits(null, [evt.feature], null);
-					var msg = evt.fieldName + " changed to " + evt.fieldValue;
-					document.getElementById('attributeUpdateMessage').innerHTML = msg;
-				});
-				attInspector.on("delete", function (evt) {
-					evt.feature.getLayer().applyEdits(null, null, [evt.feature]);
+					evt.feature.getLayer().applyEdits(null, [evt.feature], null, callback, errback);
+					function errback (err, msg) {
+						console.log('err',err);
+						console.log('evt',evt);
+						if (err == 'hilo_error') {
+							topic.publish('growler/growl', {
+								title: 'Invalid Value',
+								message: msg,
+								level: 'error',
+								timeout: 5000
+							});
+
+						} else {
+							topic.publish('growler/growl', {
+								title: 'Invalid Value',
+								message: '"' + evt.fieldValue + '" is an invalid input for field: ' + evt.fieldName,
+								level: 'error',
+								timeout: 5000
+							});
+						}
+						console.log('attInspector', attInspector);
+						console.log('evt.feature.attributes[evt.fieldName]',evt.feature.attributes[evt.fieldName]);
+						attInspector.refresh();
+
+					}
+					function callback () {
+						topic.publish('growler/growl', {
+							title: 'Attribute Updated!',
+							message: evt.fieldName + " changed to " + evt.fieldValue,
+							level: 'success',
+							timeout: 5000
+						});					
+					}
 				});
 			}));
 		},
@@ -146,17 +216,23 @@ define([
 			queryRoadsegAlias.objectIds = [selectedFeature['OBJECTID']];
 			selectedLayer.queryRelatedFeatures(queryRoadsegAlias, lang.hitch(this, function (relatedRecords) {
 				var fset = relatedRecords[selectedFeature['OBJECTID']];
-				// If an alias record exists
-				if (fset) {
-					// Display number of aliases found and 'Add Another Alias' button
-					var numRecords = fset.features.length;
+				if (fset) {		// If an alias record exists
+					// Display AttributeInspector
 					document.getElementById('attributeInspectorDiv').style.display = 'block';
-					document.getElementById('attributeUpdateMessage').style.display = 'block';
-					if (numRecords > 1) {
-						attributeMessageContent = "<b>"+numRecords+" aliases found!</b>"
-					} else if (numRecords == 1) {
-						attributeMessageContent = '<b>Alias found!</b>';
+					// Display number of aliases found
+					switch(fset.features.length) {
+						case 1:
+							numAliasMsg = ' alias found!'
+							break;
+						default:
+							numAliasMsg = ' aliases found!';
 					}
+					topic.publish('growler/growl', {
+						title: fset.features.length + numAliasMsg,
+						message: '',
+						level: 'default',
+						timeout: 5000
+					});
 					// Collect corresponding attributes
 					var relatedObjectIds = arrayUtils.map(fset.features, function (feature) {
 						return feature.attributes[aliasTable.objectIdField];
@@ -166,54 +242,71 @@ define([
 					selectQuery.objectIds = relatedObjectIds;
 					aliasTable.selectFeatures(selectQuery, FeatureLayer.SELECTION_NEW);
 				} else {
-					// If no alias exists in the related table, create 'Add New' button
+					// if no Alias exists, hide the AttributeInspector
 					document.getElementById('attributeInspectorDiv').style.display = 'none';
-					attributeMessageContent = "No alias exists for this road segment.";
+					topic.publish('growler/growl', {
+						title: 'No Alias Found',
+						message: 'No alias exists for this road segment.',
+						level: 'warning',
+						timeout: 5000
+					});
 				};
-				attributeMessageContent += "<br><br> <input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>Add New Alias</button>";
-				attributeMessageContent += missingAN;
-				document.getElementById('attributeMessage').innerHTML = attributeMessageContent;
+				
+				// Display 'New Alias' button
+				document.getElementById('attributeMessage').innerHTML = "<input type='text' id='newAliasName' placeholder='Enter Alias Name...' style='width: 60%;'><button id='addAliasButton' type='button' align='center' style='width: 36%;'>New Alias</button>";
 				document.getElementById('attributeMessage').style.display = 'block';
 				var _this = this;
 
-				// Functionality to add new Alias record
+				// Functionality for New Alias button
 				document.getElementById("addAliasButton").onclick = function () {
 					var newAlias = document.getElementById("newAliasName").value;
 					if (newAlias != "") {
 						console.log('adding new alias...');
 						var newAttributes = {
-						geometry: null,
-						attributes: {
-							ROADSEGID: selectedFeature['ROADSEGID'],
-							POSTDATE:new Date().getTime(),
-							ALIAS_JURIS: null,
-							POSTID: "",
-							ALIAS_PREDIR_IND: null,
-							ALIAS_NM: newAlias,
-							ALIAS_SUFFIX_NM: null,
-							ALIAS_POST_DIR: null,
-							ALIAS_LEFT_LO_ADDR: null,
-							ALIAS_LEFT_HI_ADDR: null,
-							ALIAS_RIGHT_LO_ADDR: null,
-							ALIAS_RIGHT_HI_ADDR: null,
-							LMIXADDR: null,
-							RMIXADDR: null
-						}
+							geometry: null,
+							attributes: {
+								ROADSEGID: selectedFeature['ROADSEGID'],
+								POSTDATE:new Date().getTime(),
+								ALIAS_JURIS: null,
+								POSTID: "",
+								ALIAS_PREDIR_IND: null,
+								ALIAS_NM: newAlias,
+								ALIAS_SUFFIX_NM: null,
+								ALIAS_POST_DIR: null,
+								ALIAS_LEFT_LO_ADDR: null,
+								ALIAS_LEFT_HI_ADDR: null,
+								ALIAS_RIGHT_LO_ADDR: null,
+								ALIAS_RIGHT_HI_ADDR: null,
+								LMIXADDR: null,
+								RMIXADDR: null
+							}
 						};
-						aliasTable.applyEdits([newAttributes],null,null,null,
-						function(error){
-							if(error){
-								console.log(error);
-						}}).then( function() {
-							missingAN = "";
-							// Restart function to show newly created alias
+						aliasTable.applyEdits([newAttributes],null,null,callback,errback);
+						function errback () {
+							topic.publish('growler/growl', {
+								title: 'Error...',
+								message: 'An error occured attempting to create an alias.',
+								level: 'error',
+								timeout: 5000
+							});
+						}
+						function callback () {
+							topic.publish('growler/growl', {
+								title: 'Alias created!',
+								message: 'A new alias of ' + newAlias + ' has been created!',
+								level: 'success',
+								timeout: 5000
+							});
 							_this.getRelatedData(selectedFeature,selectedLayer);
-							return;
+							return;				
+						}
+					} else {	// Handle blank Alias entry
+						topic.publish('growler/growl', {
+							title: 'Enter Alias...',
+							message: 'Please enter a valid Alias Name.',
+							level: 'error',
+							timeout: 5000
 						});
-					} else {
-						missingAN = "<br /><br /><span style='color:red;font-weight:bold;'>Please enter a valid alias name.</span>";
-						_this.getRelatedData(selectedFeature,selectedLayer);
-						return;
 					}
 				};
 				
@@ -239,7 +332,12 @@ define([
 					this.editor.startup();
 					console.log('this.editor',this.editor);
 					ai = this.editor.attributeInspector;
+					ai.on('attribute-change',function(evt) {
+						console.log('attribute changed, evt:', evt);
+						return;
+					});
 				}));
+
 				this.toggleBTN.set('label', this.i18n.labels.stopEditing);
 				this.toggleBTN.set('class', 'danger');
 				this.isEdit = true;
@@ -285,9 +383,6 @@ define([
 		**/
 		handleSelection: function(evt) {
 			console.log('handleSelection()...');
-			// if (evt.id == 'roads' || evt.target.id == 'roads') {
-			// 	console.log('________________________road selected________________________');
-			// }
 			selectedLayer = roadLayer;
 			selectedFeature = roadLayer._selectedFeatures;
 			console.log('selectedFeature',selectedFeature);
@@ -297,39 +392,20 @@ define([
 				univ_this.getRelatedData(selectedFeature.attributes, selectedLayer);
 			} else {
 				univ_this.noSelection();
-			}
-			function ObjectLength( object ) {
-				var length = 0;
-				for( var key in object ) {
-					if( object.hasOwnProperty(key) ) {
-						++length;
-					}
-				}
-				return length;
-			};
+			} 
 		},
 		/**
-		* Removes initial commas from editor InfoWindow
+		* Removes commas from editor InfoWindow
 		**/
 		removeCommas: function(evt) {
 			if (this.mapClickMode === 'editor'){
 				console.log('removeCommas()...');
-				// console.log('evt',evt);
-				console.log('iw',univ_this.map.infoWindow);
-				univ_this.map.infoWindow._nextFeatureButton.id = 'nf';
-				univ_this.map.infoWindow._prevFeatureButton.id = 'pf';
-				var _this = this;
-				// document.getElementById("nf").onclick = function () {
-				// 	univ_this.removeCommas();
-				// 	return
-				// }
-				// document.getElementById("pf").onclick = function () {
-				// 	univ_this.removeCommas();
-				// 	return
-				// }
-				console.log('ai',ai);
+				// console.log('infoWindow',univ_this.map.infoWindow);
+				// console.log('ai',ai);
+				// console.log('lInfo',lInfo);
+				// univ_this.map.infoWindow._nextFeatureButton.id = 'nf';
+				// univ_this.map.infoWindow._prevFeatureButton.id = 'pf';
 				var lInfo = ai.layerInfos[0];// get the correct layerInfo
-				console.log('lInfo',lInfo);
 				lInfo.fieldInfos.forEach( function(item) {
 					if(item.dijit && !item.field.domain){
 						item.dijit.constraints && (item.dijit.constraints.pattern = "#");
@@ -347,8 +423,6 @@ define([
 			interLayer.clearSelection();
 			if (this.mapClickMode == 'editor') {
 				document.getElementById('attributeInspectorDiv').style.display = 'none';
-				document.getElementById('attributeUpdateMessage').innerHTML = '';
-				document.getElementById('attributeUpdateMessage').style.display = 'none';
 				document.getElementById('attributeMessage').innerHTML = '<b>No Feature Selected.</b>';
 				document.getElementById('attributeMessage').style.display = 'block';
 			}
