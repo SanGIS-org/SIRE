@@ -68,7 +68,8 @@ define([
                 polyline: {
                     type: 'esriSLS',
                     style: 'esriSLSSolid',
-                    color: [0, 255, 255, 255],
+                    // color: [0, 255, 255, 255],
+                    color: [4, 156, 219, 255],
                     width: 3
                 },
                 polygon: {
@@ -102,7 +103,8 @@ define([
                 polyline: {
                     type: 'esriSLS',
                     style: 'esriSLSSolid',
-                    color: [4, 156, 219, 255],
+                    // color: [4, 156, 219, 255],
+                    color: [0, 255, 255, 255],
                     width: 3
                 },
                 polygon: {
@@ -377,6 +379,8 @@ define([
                 return graphicsLayer;
             },
             onGraphicsLayerClick: function (event) {
+                console.log('event',event);
+
                 var zoomOnSelect = this.zoomOptions.select;
                 this.zoomOptions.select = false;
                 var row = this.resultsGrid.row(event.graphic.storeid);
@@ -384,6 +388,11 @@ define([
                 this.resultsGrid.focus(row.element);
                 row.element.focus();
                 this.zoomOptions.select = zoomOnSelect;
+                
+                require(["dojo/topic"], function(topic){
+                    topic.publish("find/edit", event.graphic.attributes['OBJECTID']);
+                });
+
             },
             createGraphicsSymbols: function () {
                 var graphicSymbols = {}, resultSymbolDefinitions, selectionSymbolDefinitions;

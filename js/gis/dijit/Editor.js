@@ -14,6 +14,8 @@ define([
 	'esri/dijit/AttributeInspector',
 	'dojo/dnd/Moveable',
 	'dojo/query',
+	'esri/symbols/SimpleLineSymbol',
+	'esri/Color',
 	'dojo/promise/all',
 	'dojo/text!./Editor/templates/Editor.html',
 	'dojo/i18n!./Editor/nls/resource',
@@ -34,10 +36,12 @@ define([
 	AttributeInspector,
 	Moveable,
 	query,
+	SimpleLineSymbol,
+	Color,
 	all,
 	template,
 	i18n) {
-	var selectedFeature, selectedLayer, aliasTable, roadTable, roadLayer, interLayer, roadName, ai, univ_this;
+	var selectedFeature, selectedLayer, roadsAI, aliasAI, aliasTable, aliasTable2, roadTable, roadLayer, interLayer, roadName, ai, univ_this;
 	return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
 		templateString: template,
 		i18n: i18n,
@@ -56,19 +60,37 @@ define([
 			}
 			univ_this = this;
 			var map = this.map;
+			console.log('this',this);
 			roadLayer = this.map.getLayer("roads");
 			interLayer = this.map.getLayer("Intersections");
 			this.loadRoadsegAlias();
-			roadLayer.on('selection-complete',univ_this.handleSelection);
-			map.infoWindow.on('hide', lang.hitch(this, univ_this.noSelection));
-			map.infoWindow.on('show', lang.hitch(this, univ_this.removeCommas));
+			roadLayer.on('selection-complete', lang.hitch(this, univ_this.handleSelection));
+			this.map.infoWindow.on('hide', lang.hitch(this, univ_this.noSelection));
+			this.map.infoWindow.on('show', lang.hitch(this, univ_this.removeCommas));
 
 			// This bit of code makes infoWindows moveable
 			var handle = query(".title", map.infoWindow.domNode)[0];
 			var dnd = new Moveable(map.infoWindow.domNode, {
 				handle: handle
 			});
+
+			// Currently attempting to select with editor when the 'Find' function is called and editor is open
+			// This would fix the bug where the 'Find' result is not selectable until cleared
+			topic.subscribe('find/edit', function(e) {
+				var query = new Query();
+				query.objectIds = [e];
+				query.outFields = ['*'];
+				roadLayer.selectFeatures(query,esri.layers.FeatureLayer.SELECTION_NEW);
+				console.log('arguments',arguments);
+				console.log('e',e);
+				console.log('roadLayer',roadLayer);
+				console.log('selectedFeature', selectedFeature)
+				console.log('roadLayer._selectedFeatures',roadLayer._selectedFeatures);
+				univ_this.handleSelection()
+            });
 		},
+
+
 		/**
 		* Loads Alias table and AttributeInspector
 		**/
@@ -92,6 +114,43 @@ define([
 			});
 			aliasTable.on("load", lang.hitch(this, function () {
 				var layerInfos = [{
+					'featureLayer': roadLayer,
+					'showAttachments': false,
+					'isEditable': true,
+					'fieldInfos': [
+						{fieldName: 'OBJECTID', isEditable: false, label: 'ObjectID'},
+						{fieldName: 'ROADSEGID', isEditable: false, label: 'RoadSegID'},
+						{fieldName: 'LLOWADDR', isEditable: true, label: 'Left Low Addr', stringFieldOption: "textbox"},
+						{fieldName: 'LHIGHADDR', isEditable: true, label: 'Left High Addr'},
+						{fieldName: 'RLOWADDR', isEditable: true, label: 'Right Low Addr'},
+						{fieldName: 'RHIGHADDR', isEditable: true, label: 'Right High Addr'},
+						{fieldName: 'SEGCLASS', isEditable: true, label: 'SegClass'},
+						{fieldName: 'SPEED', isEditable: true, label: 'Speed Limit'},
+						{fieldName: 'FIREDRIV', isEditable: true, label: 'Fire Drivability'},
+						{fieldName: 'ONEWAY', isEditable: true, label: 'Oneway'},
+						{fieldName: 'OBMH', isEditable: true, label: 'OBMH'},
+						{fieldName: 'DEDSTAT', isEditable: true, label: 'Dedicated Stat'},
+						{fieldName: 'F_LEVEL', isEditable: true, label: 'From Level'},
+						{fieldName: 'T_LEVEL', isEditable: true, label: 'To Level'},
+						{fieldName: 'FUNCLASS', isEditable: true, label: 'Function Class'},
+						{fieldName: 'LMIXADDR', isEditable: true, label: 'Left Mixed Address'},
+						{fieldName: 'RMIXADDR', isEditable: true, label: 'Right Mixed Address'},
+						{fieldName: 'SEGSTAT', isEditable: true, label: 'Segment Stat'},
+						{fieldName: 'L_BLOCK', isEditable: false, label: 'L Block'},
+						{fieldName: 'R_BLOCK', isEditable: false, label: 'R Block'},
+						{fieldName: 'L_TRACT', isEditable: false, label: 'L Tract'},
+						{fieldName: 'R_TRACT', isEditable: false, label: 'R Tract'},
+						{fieldName: 'L_BEAT', isEditable: false, label: 'L Beat'},
+						{fieldName: 'R_BEAT', isEditable: false, label: 'R Beat'},
+					]
+				}];
+				roadsAI = new AttributeInspector({
+					layerInfos: layerInfos
+				}, "attributeInspectorDiv2");	
+			// }, "esri_dijit_AttributeInspector_0");
+				console.log('roadsAI created.')
+
+				var layerInfos = [{
 					'featureLayer': aliasTable,
 					'showAttachments': false,
 					'isEditable': true,
@@ -104,11 +163,11 @@ define([
 						};
 					})
 				}];
-				var attInspector = new AttributeInspector({
+				var aliasAI = new AttributeInspector({
 					layerInfos: layerInfos
 				}, "attributeInspectorDiv");
 				// Handle Attribute Updates
-				attInspector.on("attribute-change", function (evt) {
+				aliasAI.on("attribute-change", function (evt) {
 					// Block negative numeric values
 					if (!isNaN(evt.fieldValue)) {
 						if (evt.fieldValue < 0) {
@@ -148,6 +207,7 @@ define([
 							}
 					}
 					evt.feature.attributes[evt.fieldName] = evt.fieldValue;
+					console.log('applyEdits()', evt.feature);
 					evt.feature.getLayer().applyEdits(null, [evt.feature], null, callback, errback);
 					function errback (err, msg) {
 						console.log('err',err);
@@ -168,9 +228,10 @@ define([
 								timeout: 5000
 							});
 						}
-						console.log('attInspector', attInspector);
-						console.log('evt.feature.attributes[evt.fieldName]',evt.feature.attributes[evt.fieldName]);
-						attInspector.refresh();
+						// console.log('aliasAI', aliasAI);
+						// console.log('evt.feature.attributes[evt.fieldName]',evt.feature.attributes[evt.fieldName]);
+						// aliasAI.refresh();
+						// roadsAI.refresh();
 
 					}
 					function callback () {
@@ -199,6 +260,7 @@ define([
 				if (fset) {
 					roadName = fset;
 					this.map.infoWindow.setTitle(roadName);
+					// this.map.infoWindow.setContent(roadsAI.domNode);
 				}
 			}));
 		},
@@ -207,9 +269,8 @@ define([
 		* @param selectedFeature {Feature} - the feature clicked
 		* @param selectedLayer {FeatureLayer} - the layer for the feature clicked
 		**/
-		getRelatedData: function(selectedFeature, selectedLayer) {
-			console.log('getRelatedData()...');
-			// Build Road Alias query
+		getAliasData: function(selectedFeature, selectedLayer) {
+			console.log('getAliasData()...');
 			var queryRoadsegAlias = new RelationshipQuery();
 			queryRoadsegAlias.outFields = ["*"];
 			queryRoadsegAlias.relationshipId = 1;
@@ -297,7 +358,7 @@ define([
 								level: 'success',
 								timeout: 5000
 							});
-							_this.getRelatedData(selectedFeature,selectedLayer);
+							_this.getAliasData(selectedFeature,selectedLayer);
 							return;				
 						}
 					} else {	// Handle blank Alias entry
@@ -315,7 +376,6 @@ define([
 		toggleEditing: function () {
 			console.log('toggleEditing()...');
 			if (!this.isEdit) {
-				console.log('ON...');
 				var ops = lang.clone(this.settings);
 				ops.map = this.map;
 				ops.layerInfos = this.layerInfos;
@@ -330,13 +390,87 @@ define([
 						settings: ops
 					}, con);
 					this.editor.startup();
-					console.log('this.editor',this.editor);
-					ai = this.editor.attributeInspector;
-					ai.on('attribute-change',function(evt) {
-						console.log('attribute changed, evt:', evt);
-						return;
-					});
+					// ai = this.editor.attributeInspector;
+					this.editor.attributeInspector = roadsAI;
 				}));
+
+roadsAI.on("attribute-change", function (evt) {
+	console.log('roadsAI.on("attribute-change"');
+	// Block negative numeric values
+	if (!isNaN(evt.fieldValue)) {
+		if (evt.fieldValue < 0) {
+			errback();
+			return;
+		}
+	}
+	// Ensure 'LO' values are lower than 'HI' values, vise versa
+	switch(evt.fieldName) {
+		case 'LLOWADDR':
+			if (isNaN(evt.fieldValue) || evt.fieldValue <= evt.feature.attributes['LHIGHADDR'] || evt.feature.attributes['LHIGHADDR'] == null) {
+				break;
+			} else {
+				errback('hilo_error','LLOWADDR must be a number lower than LHIGHADDR');
+			}
+			return;
+		case 'LHIGHADDR':
+			if (isNaN(evt.fieldValue) || evt.fieldValue >= evt.feature.attributes['LLOWADDR'] || evt.feature.attributes['LLOWADDR'] == null) {
+				break;
+			} else {
+				errback('hilo_error','LHIGHADDR must be a number higher than LLOWADDR');
+				return;
+			}
+		case 'RLOWADDR':
+			if (isNaN(evt.fieldValue) || evt.fieldValue <= evt.feature.attributes['RHIGHADDR'] || evt.feature.attributes['RHIGHADDR'] == null) {
+				break;
+			} else {
+				errback('hilo_error','RLOWADDR must be a number lower than RHIGHADDR');
+				return;
+			}
+		case 'RHIGHADDR':
+			if (isNaN(evt.fieldValue) || evt.fieldValue >= evt.feature.attributes['RLOWADDR'] || evt.feature.attributes['RLOWADDR'] == null) {
+				break;
+			} else {
+				errback('hilo_error','RHIGHADDR must be a number higher than RLOWADDR');
+				return;
+			}
+	}
+	evt.feature.attributes[evt.fieldName] = evt.fieldValue;
+	console.log('applyEdits()',evt.feature);
+	evt.feature.getLayer().applyEdits(null, [evt.feature], null, callback, errback);
+	function errback (err, msg) {
+		console.log('err',err);
+		console.log('evt',evt);
+		if (err == 'hilo_error') {
+			topic.publish('growler/growl', {
+				title: 'Invalid Value',
+				message: msg,
+				level: 'error',
+				timeout: 5000
+			});
+
+		} else {
+			topic.publish('growler/growl', {
+				title: 'Invalid Value',
+				message: '"' + evt.fieldValue + '" is an invalid input for field: ' + evt.fieldName,
+				level: 'error',
+				timeout: 5000
+			});
+		}
+		console.log('aliasAI', aliasAI);
+		console.log('evt.feature.attributes[evt.fieldName]',evt.feature.attributes[evt.fieldName]);
+		// aliasAI.refresh();
+	}
+	function callback () {
+		topic.publish('growler/growl', {
+			title: 'Attribute Updated!',
+			message: evt.fieldName + " changed to " + evt.fieldValue,
+			level: 'success',
+			timeout: 5000
+		});					
+	}
+});
+				// }));
+				// this.loadRoadsegAlias();
 
 				this.toggleBTN.set('label', this.i18n.labels.stopEditing);
 				this.toggleBTN.set('class', 'danger');
@@ -344,7 +478,6 @@ define([
 				topic.publish('mapClickMode/setCurrent', 'editor');
 
 			} else {
-				console.log('OFF...');
 				this.endEditing();
 				topic.publish('mapClickMode/setDefault');
 			}
@@ -361,6 +494,8 @@ define([
 			this.editor = null;
 			document.getElementById('attributeInspectorDiv').style.display = 'none';
 			document.getElementById('attributeMessage').style.display = 'none';
+			var elementsbyclass = document.getElementsByClassName('esriPopup');
+			elementsbyclass[0].style.display = 'block';
 		},
 		onLayoutChange: function (open) {
 			console.log('onLayoutChange()...');
@@ -383,29 +518,29 @@ define([
 		**/
 		handleSelection: function(evt) {
 			console.log('handleSelection()...');
+
+// topic.subscribe("find/edit", function(){
+// 	console.log("received:", arguments);
+// });
+
 			selectedLayer = roadLayer;
 			selectedFeature = roadLayer._selectedFeatures;
-			console.log('selectedFeature',selectedFeature);
 			selectedFeature = selectedFeature[Object.keys(selectedFeature)[0]];
 			if (selectedFeature != undefined) {
-				univ_this.getRoadName(selectedFeature.attributes, selectedLayer);
-				univ_this.getRelatedData(selectedFeature.attributes, selectedLayer);
+				this.getRoadName(selectedFeature.attributes, selectedLayer);
+				this.getAliasData(selectedFeature.attributes, selectedLayer);
 			} else {
-				univ_this.noSelection();
-			} 
+				this.noSelection();
+			}
 		},
 		/**
 		* Removes commas from editor InfoWindow
 		**/
-		removeCommas: function(evt) {
+		removeCommas: function() {
 			if (this.mapClickMode === 'editor'){
 				console.log('removeCommas()...');
-				// console.log('infoWindow',univ_this.map.infoWindow);
-				// console.log('ai',ai);
-				// console.log('lInfo',lInfo);
-				// univ_this.map.infoWindow._nextFeatureButton.id = 'nf';
-				// univ_this.map.infoWindow._prevFeatureButton.id = 'pf';
-				var lInfo = ai.layerInfos[0];// get the correct layerInfo
+				// this.map.infoWindow.setContent(roadsAI.domNode);
+				var lInfo = roadsAI.layerInfos[0];// get the correct layerInfo
 				lInfo.fieldInfos.forEach( function(item) {
 					if(item.dijit && !item.field.domain){
 						item.dijit.constraints && (item.dijit.constraints.pattern = "#");
@@ -415,12 +550,14 @@ define([
 			}
 		},
 		/**
-		* Clears feature selections and corresponding information in side panel
+		* Clears feature selections and corresponding. information in side panel
 		**/
 		noSelection: function() {
 			console.log('noSelection()...');
 			roadLayer.clearSelection();
 			interLayer.clearSelection();
+			roadsAI.refresh();
+
 			if (this.mapClickMode == 'editor') {
 				document.getElementById('attributeInspectorDiv').style.display = 'none';
 				document.getElementById('attributeMessage').innerHTML = '<b>No Feature Selected.</b>';

@@ -88,6 +88,7 @@ define([
 
 		postCreate: function () {
 			this.inherited(arguments);
+			this.mapClickMode = 'identify';
 			if (!this.identifies) {
 				this.identifies = {};
 			}
@@ -95,9 +96,10 @@ define([
 			this.addLayerInfos(this.layerInfos);
 
 			this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
-			// this.own(topic.subscribe('identify/addLayerInfos', lang.hitch(this, 'addLayerInfos')));
+			this.own(topic.subscribe('identify/addLayerInfos', lang.hitch(this, 'addLayerInfos')));
 
 			this.map.on('click', lang.hitch(this, function (evt) {
+				console.log('mapClickMode', this.mapClickMode);
 				if (this.mapClickMode === 'identify') {
 					this.executeIdentifyTask(evt);
 				}
@@ -124,20 +126,20 @@ define([
 		* Pulls road name from 'gisdata.T.ROADNAME' and assigns it to the InfoWindow Title
 		* @param selectedFeature {Feature} - the feature clicked
 		**/
-		getRoadName: function(selectedFeature) {
-			console.log('getRoadName()...');
-			var queryRoadName = new RelationshipQuery();
-			queryRoadName.outFields = ['FULL_NAME'];
-			queryRoadName.relationshipId = 2;
-			queryRoadName.objectIds = [selectedFeature['OBJECTID']];
-			selectedLayer.queryRelatedFeatures(queryRoadName,lang.hitch(this, function (relatedRecords) {
-				var fset = relatedRecords[selectedFeature['OBJECTID']].features[0].attributes['FULL_NAME'];
-				if (fset) {
-					roadName = fset;
-					this.map.infoWindow.setTitle(roadName);
-				}
-			}));
-		},
+		// getRoadName: function(selectedFeature) {
+		// 	console.log('getRoadName()...');
+		// 	var queryRoadName = new RelationshipQuery();
+		// 	queryRoadName.outFields = ['FULL_NAME'];
+		// 	queryRoadName.relationshipId = 2;
+		// 	queryRoadName.objectIds = [selectedFeature['OBJECTID']];
+		// 	selectedLayer.queryRelatedFeatures(queryRoadName,lang.hitch(this, function (relatedRecords) {
+		// 		var fset = relatedRecords[selectedFeature['OBJECTID']].features[0].attributes['FULL_NAME'];
+		// 		if (fset) {
+		// 			roadName = fset;
+		// 			this.map.infoWindow.setTitle(roadName);
+		// 		}
+		// 	}));
+		// },
 		/**
 		 * handles an array of layerInfos to call addLayerInfo for each layerInfo
 		 * @param {Array<layerInfo>} layerInfos The array of layer infos
@@ -230,7 +232,7 @@ define([
 			}
 		},
 		executeIdentifyTask: function (evt) {
-			console.log('evt',evt);
+			console.log('executeIdentifyTask',evt);
 		// This function is called when a user right-clicks > Identify here
 			if (!this.checkForGraphicInfoTemplate(evt)) {
 				return;
@@ -246,6 +248,7 @@ define([
 
 			var mapPoint = evt.mapPoint;
 			var identifyParams = this.createIdentifyParams(mapPoint);
+			console.log('identifyparams',identifyParams);
 			var identifies = [];
 			var identifiedlayers = [];
 			var selectedLayer = this.getSelectedLayer();
@@ -262,9 +265,6 @@ define([
 					identifies.push(layer.identifyTask.execute(params));
 					identifiedlayers.push(layer);
 				}
-				// var relatedQuery = new RelationshipQuery();
-				// relatedQuery.outFields = ["FULL_NAME"];
-				// relatedQuery.relationshipId = 2;
 			}));
 
 			if (identifies.length > 0) {
@@ -304,7 +304,8 @@ define([
 
 		createIdentifyParams: function (point) {
 			var identifyParams = new IdentifyParameters();
-			identifyParams.tolerance = this.identifyTolerance;
+			// identifyParams.tolerance = this.identifyTolerance;
+			identifyParams.tolerance = 200;
 			identifyParams.returnGeometry = true;
 			identifyParams.layerOption = IdentifyParameters.LAYER_OPTION_VISIBLE;
 			identifyParams.geometry = point;
@@ -312,7 +313,7 @@ define([
 			identifyParams.width = this.map.width;
 			identifyParams.height = this.map.height;
 			identifyParams.spatialReference = this.map.spatialReference;
-
+			console.log('createIdentifyParams', identifyParams);
 			return identifyParams;
 		},
 
